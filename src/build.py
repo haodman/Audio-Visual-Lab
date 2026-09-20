@@ -1,0 +1,47 @@
+# 把 app.html + app.js + models/*.jpg 打包成单文件 music-fx-lab.html
+# 用法：在 src/ 目录里执行  python3 build.py
+import base64, glob, json, os
+
+meta = [("车内自拍",["自拍","室内"]),("橙色长裙",["全身","户外"]),("蓝天大笑",["自拍","户外"]),("天台夕阳",["半身","户外"]),
+        ("红格衬衫",["自拍","户外"]),("街头双人",["双人","全身","夜景"]),("砖墙双人",["双人","半身","室内"]),("唱片墙",["自拍","室内","夜景"]),
+        ("镜子自拍",["半身","室内"]),("奶昔咖啡厅",["半身","室内"]),("超市耳机",["自拍","室内"]),("走廊全身",["全身","室内"]),
+        ("海边白T",["半身","户外"]),("鱼眼电话亭",["自拍","户外"]),("沙发午后",["全身","户外"]),("红卫衣镜拍",["半身","室内"]),
+        ("地毯俯拍",["半身","室内"]),("健身房",["自拍","室内"]),("条纹衫眼镜",["自拍","户外"]),("卷发白裙",["半身","室内"])]
+
+here = os.path.dirname(os.path.abspath(__file__))
+os.chdir(here)
+fs = sorted(glob.glob('models/m*.jpg'))
+arr = '[' + ','.join(json.dumps({
+    "name": meta[i][0], "tags": meta[i][1] + ["竖图"],
+    "src": "data:image/jpeg;base64," + base64.b64encode(open(f, 'rb').read()).decode()
+}, ensure_ascii=False) for i, f in enumerate(fs)) + ']'
+
+# Optional real-audio test pack. Keep metadata in music/library.json; the build
+# embeds audio, generated covers and LRC text so the final HTML still works when
+# opened directly from disk. Adding a track only requires one manifest entry.
+music_library = []
+music_manifest = os.path.join(here, 'music', 'library.json')
+if os.path.exists(music_manifest):
+    with open(music_manifest, encoding='utf-8') as fh:
+        for rec in json.load(fh):
+            item = dict(rec)
+            audio_path = os.path.join(here, 'music', item.pop('audio'))
+            cover_path = os.path.join(here, 'music', item.pop('cover'))
+            lyric_path = os.path.join(here, 'music', item.pop('lyrics'))
+            ext = os.path.splitext(audio_path)[1].lower().lstrip('.')
+            mime = {'mp3': 'audio/mpeg', 'm4a': 'audio/mp4', 'wav': 'audio/wav', 'ogg': 'audio/ogg'}.get(ext, 'audio/mpeg')
+            item['url'] = 'data:' + mime + ';base64,' + base64.b64encode(open(audio_path, 'rb').read()).decode()
+            item['cover'] = 'data:image/jpeg;base64,' + base64.b64encode(open(cover_path, 'rb').read()).decode()
+            item['lrc'] = open(lyric_path, encoding='utf-8').read()
+            item['kind'] = 'pack'
+            item['bpm'] = 0
+            music_library.append(item)
+music_arr = json.dumps(music_library, ensure_ascii=False)
+
+html = open('app.html', encoding='utf-8').read()
+js = open('app.js', encoding='utf-8').read()
+js = js.replace('/*__PACK_TRACKS__*/[]', music_arr)
+html = html.replace('/*__PRESETS__*/[]', arr).replace('<script src="app.js"></script>', '<script>\n' + js + '\n</script>')
+out = os.path.join(os.path.dirname(here), 'music-fx-lab.html')
+open(out, 'w', encoding='utf-8').write(html)
+print('built', out, round(len(html) / 1e6, 2), 'MB')

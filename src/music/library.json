@@ -1,0 +1,8 @@
+[
+  {"id":"blue-apple","name":"Blue Apple","artist":"AK Akemi Kakihara","genre":"Test Music","audio":"blue-apple.mp3","cover":"covers/blue-apple.jpg","lyrics":"lyrics/blue-apple.lrc"},
+  {"id":"die-with-a-smile","name":"Die With A Smile","artist":"Lady Gaga & Bruno Mars","genre":"Pop","audio":"die-with-a-smile.mp3","cover":"covers/die-with-a-smile.jpg","lyrics":"lyrics/die-with-a-smile.lrc"},
+  {"id":"espresso","name":"Espresso","artist":"Sabrina Carpenter","genre":"Pop","audio":"espresso.mp3","cover":"covers/espresso.jpg","lyrics":"lyrics/espresso.lrc"},
+  {"id":"apt","name":"APT.","artist":"ROSÉ & Bruno Mars","genre":"Pop Rock","audio":"apt.mp3","cover":"covers/apt.jpg","lyrics":"lyrics/apt.lrc"},
+  {"id":"silence-feat-khalid","name":"Silence (feat. Khalid)","artist":"Marshmello & Khalid","genre":"Electronic Pop","audio":"silence-feat-khalid.mp3","cover":"covers/silence-feat-khalid.jpg","lyrics":"lyrics/silence-feat-khalid.lrc"},
+  {"id":"the-fate-of-ophelia","name":"The Fate of Ophelia","artist":"Taylor Swift","genre":"Pop","audio":"the-fate-of-ophelia.mp3","cover":"covers/the-fate-of-ophelia.jpg","lyrics":"lyrics/the-fate-of-ophelia.lrc"}
+]
