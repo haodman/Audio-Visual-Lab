@@ -37,9 +37,10 @@ function setImage(img) {
   S.media = img; S.isVideo = false; S.cache = {}; S.srcKey = (S.srcKey || 0) + 1; S.segRequestedAt = performance.now();
   sctx.clearRect(0, 0, W, H); coverDraw(sctx, img, img.naturalWidth || img.width, img.naturalHeight || img.height);
   $('#storyimg').src = img.src; drawPeek();
-  if (S.fx === 'subjectSplit') setTimeout(refineSubjectHQ, 30);
-  else if (MP.state === 'idle') mpLoad(); else if (MP.state === 'ready') { setSeg('识别主体 · 预计 <1s', 'working'); setTimeout(refineSubject, 30); }
-  else if (MP.state === 'loading') setSeg('加载模型 · 预计 3–8s', 'working'); else setSeg('本地估算 · 点击重试', 'fallback');
+  // All still-image effects share the same MODNet matting capability. Each
+  // framing stores its own output, but model/version/edge treatment are one.
+  setSeg('MODNet 高清抠像 · 启动中…', 'working');
+  setTimeout(() => refineSubjectHQ(S.fx === 'subjectSplit' ? 'split' : 'full'), 30);
 }
 function setVideo(url) {
   const v = document.createElement('video'); v.src = url; v.loop = true; v.muted = true; v.playsInline = true;
@@ -133,13 +134,15 @@ function rgbSplit(c, off, dy = 0) {
 /* ---------- AI subject segmentation (MediaPipe, with heuristic fallback) ---------- */
 const MPURL = 'https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1.1675465747/';
 const MP = { state: 'idle', seg: null, pending: null, queued: false, videoFrames: 0, videoUIAt: 0 };
-const HQ = { state: 'idle', model: null, processor: null, mod: null, busy: false, queued: false };
+const HQ = { state: 'idle', model: null, processor: null, mod: null, busy: false, queuedMode: null };
 function setSeg(t, state) { const e = $('#segState'); if (!e) return; e.textContent = t; e.dataset.state = state || (/✓|fps/.test(t) ? 'ok' : /估算|失败/.test(t) ? 'fallback' : /加载|识别|启动|排队/.test(t) ? 'working' : 'idle'); }
 
-async function refineSubjectHQ() {
+async function refineSubjectHQ(mode = S.fx === 'subjectSplit' ? 'split' : 'full') {
   if (S.isVideo) return refineSubject();
-  if (HQ.busy) { HQ.queued = true; setSeg('高清抠像 · 排队中…', 'working'); return; }
-  HQ.busy = true; HQ.queued = false; const key = S.srcKey, started = performance.now();
+  const cacheKey = mode === 'split' ? 'splitSub' : 'subj';
+  if (S.cache[cacheKey] && (mode !== 'full' || S.cache.subjHQ)) return;
+  if (HQ.busy) { HQ.queuedMode = mode; setSeg('高清抠像 · 排队中…', 'working'); return; }
+  HQ.busy = true; HQ.queuedMode = null; const key = S.srcKey, started = performance.now();
   try {
     if (!HQ.model) {
       HQ.state = 'loading'; setSeg('高清模型下载 · 首次约 10–40s', 'working');
@@ -151,16 +154,17 @@ async function refineSubjectHQ() {
       HQ.processor = await AutoProcessor.from_pretrained('Xenova/modnet', { progress_callback }); HQ.state = 'ready';
     }
     setSeg('MODNet 高清抠像 · 处理中…', 'working');
-    const frame = splitFrame(), url = frame.toDataURL('image/jpeg', .96), img = await HQ.mod.RawImage.fromURL(url), inputs = await HQ.processor(img), result = await HQ.model({ input: inputs.pixel_values });
+    const frame = mode === 'split' ? splitFrame() : src, url = frame.toDataURL('image/jpeg', .96), img = await HQ.mod.RawImage.fromURL(url), inputs = await HQ.processor(img), result = await HQ.model({ input: inputs.pixel_values });
     const mask = await HQ.mod.RawImage.fromTensor(result.output[0].mul(255).to('uint8')).resize(frame.width, frame.height), md = mask.data;
     if (key !== S.srcKey) return;
     const c = document.createElement('canvas'); c.width = frame.width; c.height = frame.height; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(frame, 0, 0);
     const px = g.getImageData(0, 0, c.width, c.height); for (let i = 0; i < md.length; i++) { let a = clamp((md[i] / 255 - .025) / .95, 0, 1); a = a * a * (3 - 2 * a); px.data[i * 4 + 3] = Math.round(a * 255); } g.putImageData(px, 0, 0);
-    S.cache.splitSub = c; S.cache.splitHQ = true; delete S.cache.splitBounds;
+    if (mode === 'split') { S.cache.splitSub = c; S.cache.splitHQ = true; delete S.cache.splitBounds; }
+    else { S.cache.subj = c; S.cache.subjHQ = true; S.cache.subjAI = true; delete S.cache.cont; delete S.cache.subjBounds; }
     setSeg(`MODNet 高清抠像 · ${((performance.now() - started) / 1000).toFixed(1)}s ✓`, 'ok');
   } catch (e) {
     console.warn('HQ matting failed', e); HQ.state = 'fail'; setSeg('高清模型失败 · 切换实时抠像', 'fallback'); setTimeout(refineSubject, 20);
-  } finally { HQ.busy = false; if (HQ.queued) setTimeout(refineSubjectHQ, 0); }
+  } finally { HQ.busy = false; const next = HQ.queuedMode; HQ.queuedMode = null; if (next) setTimeout(() => refineSubjectHQ(next), 0); }
 }
 function mpLoad() {
   if (MP.state !== 'idle') return; MP.state = 'loading'; setSeg('加载模型 · 预计 3–8s', 'working');
@@ -1045,7 +1049,8 @@ $('#tl').addEventListener('click', e => { if (!S.buffer) return; const r = e.cur
    7. UI
    ===================================================================== */
 function selectFx(id) { S.fx = id; document.querySelectorAll('#fxlist button').forEach(b => b.classList.toggle('on', b.dataset.id === id)); $('#fxname').textContent = FX[id].name + ' · ' + FX[id].desc; const caps = FX_CAPS[id] || []; $('#fxhint').textContent = (FX[id].hint || '') + (caps.length ? '\n技术能力：' + caps.join(' · ') : ''); buildParams();
-  if (id === 'subjectSplit') { if (curTag !== '横图') { curTag = '横图'; document.querySelectorAll('#filters .chip').forEach(b => b.classList.toggle('on', b.textContent === '横图')); renderGallery(true); applyFilter(); toast('已筛选横图，请手动选择素材'); } delete S.cache.splitSub; delete S.cache.splitBounds; setSeg(S.isVideo ? '实时视频抠像 · 启动中…' : 'MODNet 高清抠像 · 启动中…', 'working'); setTimeout(S.isVideo ? refineSubject : refineSubjectHQ, 20); }
+  if (id === 'subjectSplit') { if (curTag !== '横图') { curTag = '横图'; document.querySelectorAll('#filters .chip').forEach(b => b.classList.toggle('on', b.textContent === '横图')); renderGallery(true); applyFilter(); toast('已筛选横图，请手动选择素材'); } setSeg(S.isVideo ? '实时视频抠像 · 启动中…' : 'MODNet 高清抠像 · 启动中…', 'working'); setTimeout(() => S.isVideo ? refineSubject() : refineSubjectHQ('split'), 20); }
+  else if (!S.isVideo && ['pixelReveal', 'stretchBands'].includes(id)) { setSeg('MODNet 高清抠像 · 启动中…', 'working'); setTimeout(() => refineSubjectHQ('full'), 20); }
 }
 function buildFxList() { const list = $('#fxlist'); list.innerHTML = '';
   for (const id of FX_ORDER) { const e = FX[id]; if (!e) continue; const b = document.createElement('button'); b.dataset.id = id;
