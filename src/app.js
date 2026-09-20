@@ -173,7 +173,10 @@ function mpLoad() {
       const seg = new SelfieSegmentation({ locateFile: f => MPURL + f });
       seg.setOptions({ modelSelection: 0 });
       seg.onResults(r => { const p = MP.pending; MP.pending = null; if (p) p(r.segmentationMask); });
-      MP.seg = seg; MP.state = 'ready'; setSeg('识别主体 · 预计 <1s', 'working'); refineSubject();
+      MP.seg = seg; MP.state = 'ready';
+      // MediaPipe is the real-time video path only. Never let its softer
+      // portrait mask overwrite a finished MODNet still-image matte.
+      if (S.isVideo) { setSeg('视频主体识别中…', 'working'); refineSubject(); }
     } catch (e) { MP.state = 'fail'; setSeg('本地估算 · 点击重试', 'fallback'); } };
   el.onerror = () => { MP.state = 'fail'; setSeg('本地估算 · 点击重试', 'fallback'); };
   document.head.appendChild(el);
@@ -1309,7 +1312,6 @@ addEventListener('resize', fitPhone); fitPhone();
 /* ---------- boot ---------- */
 buildFxList(); buildTracks(); buildPhotos(); selectFx('glitch'); selectPhoto(0); drawTimeline(0); frame(); addEventListener('load', async () => { try { await restoreLibrary(); } catch (e) { }
   const mf = new URLSearchParams(location.search).get('manifest') || window.MFX_MANIFEST; if (mf) await loadManifest(mf);
-  setTimeout(mpLoad, 1200);
   const testPool = [...PACK_TRACKS, ...REMOTE_TRACKS, ...LIB.music], pool = testPool.length ? testPool : TRACKS;
   const initialTrack = pool[Math.floor(Math.random() * pool.length)]; if (initialTrack) setTimeout(() => loadTrack(initialTrack), 180);
 });
