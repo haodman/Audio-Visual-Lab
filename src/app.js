@@ -390,6 +390,46 @@ class Synth {
 /* --- pattern helpers: 16 steps per bar, 'x' hit, 'X' accent, '-' rest --- */
 function seq(pat, bar, spb, fn) { for (let i = 0; i < 16; i++) { const ch = pat[i % pat.length]; if (ch !== '-') fn(bar * 4 * spb + i * spb / 4, ch === 'X' ? 1 : 0.7, i); } }
 
+// Lightweight audition pack. These tracks are rendered only when selected, so
+// expanding the library does not increase the initial HTML download or startup
+// memory. Each preset has a distinct tempo, groove family and tonal palette.
+const EXTRA_TRACK_SPECS = [
+  ['ukg','Silver Steps','UK Garage',132,43,1,50], ['afro','Palm Radio','Afrobeats',108,46,2,45],
+  ['jersey','Club Bounce','Jersey Club',138,42,3,41], ['hyper','Sugar Crash','Hyperpop',156,40,4,48],
+  ['disco','Mirror Fever','Nu Disco',118,48,0,45], ['rnb','Velvet Room','Alt R&B',92,48,2,43],
+  ['breaks','Concrete Bloom','Breakbeat',128,44,1,38], ['garage2','Night Bus','2-Step Garage',130,46,1,46],
+  ['afrohouse','Coastal Heat','Afro House',122,48,0,43], ['jersey2','Flash Frame','Jersey Pop',144,42,3,45],
+  ['electro','Chrome Signal','Electro',126,46,4,40], ['indie','Polaroid Summer','Indie Dance',116,48,0,47],
+  ['jazzhop','Blue Window','Jazz-hop',88,48,2,41], ['futurebass','Glass Hearts','Future Bass',150,44,4,45],
+  ['baile','Rua Neon','Baile Funk',130,43,3,40], ['amapiano','Soft Current','Amapiano',112,48,2,38],
+  ['breakcore','Pixel Sprint','Breakcore',184,38,1,36], ['darkpop','After Midnight','Dark Pop',110,48,4,42],
+  ['minimal','Soft Machinery','Minimal House',124,48,0,39], ['cinematic','Open Horizon','Cinematic Pulse',82,48,2,45]
+];
+const EXTRA_TRACKS = EXTRA_TRACK_SPECS.map(([id,name,genre,bpm,dur,mode,root]) => ({
+  id:'extra-'+id,name,genre,bpm,dur,hint:'新增测试曲 · '+genre+' · '+bpm+' BPM',
+  gen(s,spb){
+    const kick=['X---X---X---X---','X-----x-X--x----','X---x-----X--x--','X--X--X-X--X--X-','X---x-X---X-x---'][mode];
+    const snare=['----X-------X---','----X------xX---','------X-------X-','---X-------X----','----X-------X---'][mode];
+    const hats=['--x---x---x---x-','x-xx-x-xx-xx-x-x','x-x---x-x-x---x-','xxxxxxxxxxxxxxxx','x-x-x-x-xxxxxxxx'][mode];
+    const prog=[[root,root+3,root+7,root+10],[root-2,root+2,root+5,root+9],[root-4,root,root+3,root+7],[root-5,root-1,root+2,root+6]];
+    const bars=Math.ceil(dur/(spb*4));
+    for(let bar=0;bar<bars;bar++){
+      const T=bar*4*spb,build=bar%16>=6&&bar%16<8,hot=bar%16>=8&&bar%16<15,ch=prog[bar%4],bn=ch[0]-12;
+      if(!build) seq(kick,bar,spb,(t,v)=>s.kick(t,v*(hot?1:.66),mode===3?1.15:.92));
+      seq(snare,bar,spb,(t,v)=>mode===0?s.clap(t,v*(hot?1:.58)):s.snare(t,v*(hot?1:.62),mode===4?1.45:1));
+      seq(hats,bar,spb,(t,v,i)=>s.hat(t,v*(hot?.5:.28),mode===1&&i%4===3));
+      if(mode===3){s.sub808(T,bn-5,spb*1.55,hot?1:.55);s.sub808(T+spb*2.5,bn+(bar%2?3:0)-5,spb*1.1,hot?.9:.45);}
+      else if(mode===2){s.sub808(T,bn,spb*1.7,hot?.8:.45);if(hot)seq('------x-------x-',bar,spb,t=>s.cowbell(t,.42));}
+      else {for(let i=0;i<(hot?8:4);i++)s.bass(T+i*spb*(hot?.5:1),bn+(i%4===3?7:0),spb*(hot?.38:.72),hot?.82:.48,mode===4?'square':mode===1?'triangle':'sawtooth',mode===0?520:360);}
+      if(mode===2){s.chord(T,ch,spb*3.8,hot?.72:.48,hot?1800:900,'triangle');if(bar%2===0)s.piano(T+spb*1.5,ch[2]+12,spb*.8,.38);}
+      else if(mode===4){for(let i=0;i<4;i++)s.pluck(T+i*spb,ch[(i+bar)%4]+12,spb*.55,hot?.34:.2);}
+      else if(bar%2===0)s.chord(T,ch,spb*3.8,hot?.72:.42,hot?2300:950,mode===1?'triangle':'sawtooth');
+      if(build){s.riser(T,spb*4,.72);seq('----x-x-xxxxxxxx',bar,spb,(t,v,i)=>s.snare(t,.25+i/25,1.25));}
+      if(bar%16===8)s.impact(T,1);
+    }
+  }
+}));
+
 const TRACKS = [
   { id: 'house', name: 'Sunset House', genre: 'House', bpm: 124, dur: 48, hint: '四四拍 · 8s 后铺垫 · 16s Drop', gen(s, spb) {
     const prog = [[57, 60, 64, 67], [55, 59, 62, 67], [53, 57, 60, 64], [55, 59, 62, 65]], bassN = [45, 43, 41, 43];
@@ -681,6 +721,62 @@ const T = (key, label, def) => ({ key, label, type: 'text', def });
 const D = (key, def, only) => ({ key, label: '驱动', type: 'driver', def, only });
 function dropFlash(f, p) { const a = ($('#autoDrop').checked ? f.drop : 0) * 0.85; if (a > 0.01) { ctx.fillStyle = `rgba(255,255,255,${a})`; ctx.fillRect(0, 0, W, H); } }
 
+function contourFont(name, size) {
+  if (name === '窄体海报') return `900 ${size}px Impact, "Arial Narrow", sans-serif`;
+  if (name === '衬线编辑') return `italic 700 ${size}px Georgia, "Songti SC", serif`;
+  if (name === '等宽科技') return `700 ${size}px "SFMono-Regular", Menlo, Consolas, monospace`;
+  return `800 ${size}px Manrope, "PingFang SC", sans-serif`;
+}
+function contourInk(p) {
+  if (p.colorMode === '手动颜色') return p.col || '#ffffff';
+  if (p.colorMode === '图片取色') return splitAccent();
+  if (p.colorMode === '反差取色') { const c = splitAccent(), n = parseInt(c.slice(1), 16), rgb = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(v => Math.round(lerp(255 - v, 255, .18))); return '#' + rgb.map(v => v.toString(16).padStart(2, '0')).join(''); }
+  return '#ffffff';
+}
+
+function initContourGL(s) {
+  if (s.glCanvas) return !!s.gl;
+  const c = document.createElement('canvas'); c.width = W; c.height = H; s.glCanvas = c;
+  const gl = c.getContext('webgl', { alpha: true, antialias: false, premultipliedAlpha: true, powerPreference: 'high-performance' });
+  if (!gl) return false;
+  const compile = (type, source) => { const sh = gl.createShader(type); gl.shaderSource(sh, source); gl.compileShader(sh); if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh)); return sh; };
+  try {
+    const vs = compile(gl.VERTEX_SHADER, 'attribute vec2 p; varying vec2 uv; void main(){uv=(p+1.0)*.5;gl_Position=vec4(p,0.,1.);}');
+    const fs = compile(gl.FRAGMENT_SHADER, `precision highp float;
+      varying vec2 uv; uniform sampler2D sdf; uniform vec2 texSize; uniform vec3 lineColor; uniform float scalePx,time,gapPx,widthPx,rings,beat,cycle,style,feather;
+      float unpackD(vec2 q){vec4 v=texture2D(sdf,q);return (floor(v.r*255.0+.5)*256.0+floor(v.g*255.0+.5))*scalePx;}
+      float field(vec2 q){vec2 p=q*texSize-.5,i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);vec2 a=(i+.5)/texSize,b=(i+vec2(1.5,.5))/texSize,c=(i+vec2(.5,1.5))/texSize,d=(i+1.5)/texSize;return mix(mix(unpackD(a),unpackD(b),f.x),mix(unpackD(c),unpackD(d),f.x),f.y);}
+      void main(){vec2 maskUV=vec2(uv.x,1.0-uv.y);float base=field(maskUV);if(base<.5){gl_FragColor=vec4(0.);return;}float qd=clamp(base/(gapPx*9.0),0.,1.);float n=(sin(maskUV.x*31.0+maskUV.y*19.0+time*.58)+.55*sin(maskUV.x*13.0-maskUV.y*37.0-time*.43))/1.55;float isSoft=step(.5,style)*(1.0-step(1.5,style)),isMinimal=step(1.5,style)*(1.0-step(2.5,style)),isRibbon=step(2.5,style);float rough=1.0-isSoft*.9-isMinimal*.88-isRibbon*.18;float gapMul=1.0+isSoft*.06+isMinimal*.28-isRibbon*.04;float widthMul=1.0-isSoft*.2-isMinimal*.6+isRibbon*.12;float d=base+n*gapPx*(.045+qd*.105)*rough*(1.0+beat*.16);float alpha=0.;
+        for(int k=0;k<10;k++){float layer=float(k);if(layer>rings)break;float u=layer+cycle;float q=clamp(u/max(1.,rings),0.,1.);float gp=gapPx*gapMul;float r=gp*(u+.065*u*u);float localGap=gp*(1.0+u*.13);float profile=.42+q*(.72+isRibbon*.28);float thick=min(localGap*.72,widthPx*widthMul*profile*(1.0+beat*(.2+isRibbon*.22)));float edge=abs(d-r);float aa=.45+(1.05+q*.3)*feather*(1.0+isSoft*.7+isMinimal*.08);alpha=max(alpha,1.0-smoothstep(thick*.5-aa,thick*.5+aa,edge));}
+        gl_FragColor=vec4(lineColor*alpha,alpha);}`);
+    const pr = gl.createProgram(); gl.attachShader(pr, vs); gl.attachShader(pr, fs); gl.linkProgram(pr); if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(pr)); gl.useProgram(pr);
+    const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW); const loc = gl.getAttribLocation(pr, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    s.gl = gl; s.glProgram = pr; s.glTexture = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, s.glTexture); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); gl.viewport(0, 0, W, H); return true;
+  } catch (e) { console.warn('Contour WebGL fallback', e); s.gl = null; return false; }
+}
+
+function uploadContourSDF(s, dist, w, h) {
+  if (!initContourGL(s)) return;
+  const packed = new Uint8Array(w * h * 4);
+  for (let i = 0; i < dist.length; i++) { const v = Math.min(65535, Math.round(dist[i])); packed[i * 4] = v >> 8; packed[i * 4 + 1] = v & 255; packed[i * 4 + 3] = 255; }
+  const gl = s.gl; gl.bindTexture(gl.TEXTURE_2D, s.glTexture); gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, packed); s.glTexW = w; s.glTexH = h;
+}
+
+function renderContourGL(s, f, p, t) {
+  const gl = s.gl, pr = s.glProgram; if (!gl || !s.glTexW) return false; gl.useProgram(pr); gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT);
+  const u = (name, value, pair) => { const l = gl.getUniformLocation(pr, name); pair ? gl.uniform2f(l, value[0], value[1]) : gl.uniform1f(l, value); };
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, s.glTexture); gl.uniform1i(gl.getUniformLocation(pr, 'sdf'), 0); u('texSize', [s.glTexW, s.glTexH], true); u('scalePx', W / s.glTexW); u('time', t); u('gapPx', p.gap); u('widthPx', p.width); u('rings', Math.round(p.rings)); u('style', ['手绘粉笔','柔光描边','极简细线','律动丝带'].indexOf(p.style)); u('feather', p.feather == null ? 0 : p.feather); const ink = hex2rgb(contourInk(p)); gl.uniform3f(gl.getUniformLocation(pr, 'lineColor'), ink[0] / 255, ink[1] / 255, ink[2] / 255);
+  const drive = clamp(f[p.drv], 0, 1), beat = clamp(drive * .7 + f.kick * 1.08 + f.beat * .52 + f.snare * .34, 0, 2.15), dt = clamp(t - (s.glLastT == null ? t : s.glLastT), 0, .08); s.glLastT = t;
+  // Discrete beat impulses, not a BPM metronome. A clear transient advances
+  // the target by exactly one ring. The current phase catches up with a strong
+  // ease-out curve, then rests; weak passages and pause states remain still.
+  const hit = Math.max(f.beat || 0, (f.kick || 0) * .95, (f.snare || 0) * .72), audible = (f.energy || 0) > .105 || (f.bass || 0) > .14;
+  if (S.playing && audible && hit > .46 && s.glBeatWas <= .46 && t - s.glLastBeatAt > .18) { s.glTarget = Math.floor(Math.max(s.glTarget, s.glPhase)) + 1; s.glVelocity = Math.max(s.glVelocity || 0, .95 + hit * 1.35); s.glLastBeatAt = t; }
+  s.glBeatWas = hit;
+  if (S.playing && (Math.abs(s.glTarget - s.glPhase) > .001 || Math.abs(s.glVelocity || 0) > .002)) { const stiffness = 30 + p.speed * 14, damping = 7.4; s.glVelocity = (s.glVelocity || 0) + (s.glTarget - s.glPhase) * stiffness * dt; s.glVelocity *= Math.exp(-damping * dt); s.glPhase += s.glVelocity * dt; if (Math.abs(s.glTarget - s.glPhase) < .0015 && Math.abs(s.glVelocity) < .006) { s.glPhase = s.glTarget; s.glVelocity = 0; } }
+  u('beat', (S.playing && audible ? beat : 0) * p.pulse); u('cycle', ((s.glPhase % 1) + 1) % 1); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); return true;
+}
+
 const FX = {
   none: { name: '原图', icon: '🖼️', desc: '无效果，仅对照', params: [], draw() { ctx.drawImage(src, 0, 0); } },
 
@@ -703,6 +799,84 @@ const FX = {
       for (const k of s.sparks) { const a = clamp((k.until - t) / (k.until - k.born), 0, 1); ctx.strokeStyle = `rgba(255,255,255,${a})`; ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.moveTo(k.x - k.r, k.y); ctx.lineTo(k.x + k.r, k.y); ctx.moveTo(k.x, k.y - k.r); ctx.lineTo(k.x, k.y + k.r); ctx.stroke(); }
       dropFlash(f, p); } },
+
+  contourField: {
+    name: '轮廓声场', icon: '🌀', desc: '主体同心轮廓 × 音频扩散',
+    hint: '使用统一的 MODNet 主体蒙版生成多级向外扩散的白色轮廓，内细外粗。中心文案会合并到蒙版中，与人物一起参与轮廓扩散；建议使用 2–4 个英文单词或 4–8 个中文字。',
+    params: [Sel('copy', '文字来源', ['自定义文字', '自动歌词'], '自定义文字'), T('text', '中心文案', ''), Sel('font', '字体风格', ['无衬线粗体', '窄体海报', '衬线编辑', '等宽科技'], '窄体海报'), Sel('style', '轮廓样式', ['柔光描边', '手绘粉笔', '极简细线', '律动丝带'], '柔光描边'), Sel('quality', '渲染精度', ['流畅', '高清', '超清'], '超清'), Sel('colorMode', '声场取色', ['图片取色', '反差取色', '经典白色', '手动颜色'], '手动颜色'), C('col', '手动颜色', '#E7E192'), R('textSize', '文字大小', .55, 1.6, 1), R('rings', '轮廓层数', 3, 8, 4, 1),
+      R('gap', '扩散间距', 14, 52, 35, 1), R('width', '线条粗细', 8, 40, 19, 1), R('feather', '边缘羽化', 0, 4, 0, .1), R('speed', '释放速度', .25, 2.5, 1.2), R('pulse', '律动强度', 0, 2, 1.42), R('dark', '背景压暗', 0, .8, .26), D('drv', 'kick', ['bass', 'kick', 'beat', 'energy'])],
+    state: { mask: null, field: null, warpA: null, warpB: null, fieldImage: null, fieldCanvas: null, key: '', lastPaint: -1, glCanvas: null, gl: null, glPhase: 0, glTarget: 0, glVelocity: 0, glLastT: null, glBeatWas: 0, glLastBeatAt: -9 },
+    draw(f, p, t) { const s = this.state, sub = subject(), sb = subjectBounds(), cy = (sb.y0 + sb.y1) / 2;
+      ctx.drawImage(src, 0, 0); if (p.dark > 0) { ctx.fillStyle = `rgba(0,0,0,${p.dark})`; ctx.fillRect(0, 0, W, H); }
+      const selectedText = p.copy === '自动歌词' ? activeLyricAt(t) : p.text;
+      const raw = (selectedText || '').trim().slice(0, 32), qualityScale = p.quality === '流畅' ? .5 : p.quality === '高清' ? .75 : 1, maskKey = S.srcKey + '|' + raw + '|' + (p.font || '') + '|' + (p.quality || '') + '|' + Math.round(p.textSize * 100) + '|' + !!S.cache.subjHQ;
+      if (!s.mask) { s.mask = document.createElement('canvas'); s.mask.width = W; s.mask.height = H; s.fieldCanvas = document.createElement('canvas'); }
+      const targetFW = Math.round(W * qualityScale), targetFH = Math.round(H * qualityScale); if (s.fieldCanvas.width !== targetFW || s.fieldCanvas.height !== targetFH) { s.fieldCanvas.width = targetFW; s.fieldCanvas.height = targetFH; s.key = ''; }
+      if (s.key !== maskKey) { s.key = maskKey; const mg = s.mask.getContext('2d'); mg.clearRect(0, 0, W, H); mg.drawImage(sub, 0, 0); mg.globalCompositeOperation = 'source-in'; mg.fillStyle = '#fff'; mg.fillRect(0, 0, W, H); mg.globalCompositeOperation = 'source-over';
+        if (raw) { const maxW = W * .82, base = 66 * p.textSize; mg.font = contourFont(p.font, base); const tw = Math.max(1, mg.measureText(raw).width), fs = base * Math.min(1, maxW / tw); mg.font = contourFont(p.font, fs); mg.textAlign = 'center'; mg.textBaseline = 'middle'; mg.fillStyle = '#fff'; mg.fillText(raw, W / 2, cy); }
+        // A two-pass chamfer distance transform approximates Euclidean distance
+        // from every exterior pixel to the previous mask edge. Contours sampled
+        // from this field are true equal-distance offsets, unlike center scaling.
+        const fc = s.fieldCanvas, fg = fc.getContext('2d', { willReadFrequently: true }), fw = fc.width, fh = fc.height; fg.clearRect(0, 0, fw, fh); fg.save(); fg.filter = qualityScale < .7 ? 'blur(.8px)' : qualityScale < .9 ? 'blur(.45px)' : 'blur(.18px)'; fg.drawImage(s.mask, 0, 0, fw, fh); fg.restore(); const px = fg.getImageData(0, 0, fw, fh), N = fw * fh, dist = new Float32Array(N), INF = 1e4, rt2 = Math.SQRT2, rt5 = Math.sqrt(5);
+        for (let i = 0; i < N; i++) dist[i] = px.data[i * 4 + 3] > 72 ? 0 : INF;
+        for (let y = 0; y < fh; y++) for (let x = 0; x < fw; x++) { const i = y * fw + x; if (!dist[i]) continue; let d = dist[i]; if (x) d = Math.min(d, dist[i - 1] + 1); if (x > 1) d = Math.min(d, dist[i - 2] + 2); if (y) d = Math.min(d, dist[i - fw] + 1); if (y > 1) d = Math.min(d, dist[i - fw * 2] + 2); if (x && y) d = Math.min(d, dist[i - fw - 1] + rt2); if (x < fw - 1 && y) d = Math.min(d, dist[i - fw + 1] + rt2); if (y > 1 && x) d = Math.min(d, dist[i - fw * 2 - 1] + rt5); if (y > 1 && x < fw - 1) d = Math.min(d, dist[i - fw * 2 + 1] + rt5); if (y && x > 1) d = Math.min(d, dist[i - fw - 2] + rt5); if (y && x < fw - 2) d = Math.min(d, dist[i - fw + 2] + rt5); dist[i] = d; }
+        for (let y = fh - 1; y >= 0; y--) for (let x = fw - 1; x >= 0; x--) { const i = y * fw + x; if (!dist[i]) continue; let d = dist[i]; if (x < fw - 1) d = Math.min(d, dist[i + 1] + 1); if (x < fw - 2) d = Math.min(d, dist[i + 2] + 2); if (y < fh - 1) d = Math.min(d, dist[i + fw] + 1); if (y < fh - 2) d = Math.min(d, dist[i + fw * 2] + 2); if (x < fw - 1 && y < fh - 1) d = Math.min(d, dist[i + fw + 1] + rt2); if (x && y < fh - 1) d = Math.min(d, dist[i + fw - 1] + rt2); if (y < fh - 2 && x) d = Math.min(d, dist[i + fw * 2 - 1] + rt5); if (y < fh - 2 && x < fw - 1) d = Math.min(d, dist[i + fw * 2 + 1] + rt5); if (y < fh - 1 && x > 1) d = Math.min(d, dist[i + fw - 2] + rt5); if (y < fh - 1 && x < fw - 2) d = Math.min(d, dist[i + fw + 2] + rt5); dist[i] = d; }
+        // Two broad, deterministic noise fields are cached with the distance map.
+        // Blending them over time gives every ring a slow hand-drawn undulation
+        // without recalculating noise (or the expensive distance field) per frame.
+        const warpA = new Float32Array(N), warpB = new Float32Array(N);
+        for (let y = 0; y < fh; y++) for (let x = 0; x < fw; x++) { const i = y * fw + x;
+          warpA[i] = (Math.sin(x * .071 + y * .043) + Math.sin(x * .027 - y * .061 + 1.8) * .55) / 1.55;
+          warpB[i] = (Math.cos(x * .052 - y * .033 + .7) + Math.sin(x * .019 + y * .082) * .5) / 1.5; }
+        s.field = dist; s.warpA = warpA; s.warpB = warpB; s.fieldImage = fg.createImageData(fw, fh); s.lastPaint = -1; uploadContourSDF(s, dist, fw, fh); }
+      const fc = s.fieldCanvas, fg = fc.getContext('2d'), n = Math.round(p.rings), drive = clamp(f[p.drv], 0, 1), beatDrive = clamp(drive * .55 + f.kick * .85 + f.beat * .28, 0, 1.8);
+      if (renderContourGL(s, f, p, t)) { ctx.drawImage(s.glCanvas, 0, 0); }
+      // Cap the procedural texture at 24 fps. The main canvas remains 60 fps,
+      // but the costly pixel pass is reused between frames for a large speed-up.
+      else if (t - s.lastPaint > 1 / 24) { s.lastPaint = t; const out = s.fieldImage.data, scale = W / fc.width;
+        const cycle = (t * p.speed * (.2 + f.energy * .05)) % 1, shift = cycle * p.gap, radii = []; let r = shift;
+        for (let layer = 0; layer <= n + 1; layer++) { radii.push(r); r += p.gap * (1 + layer * .13); }
+        const maxR = radii[Math.min(n, radii.length - 1)] || p.gap, ca = Math.cos(t * .62), sa = Math.sin(t * .62), audioWidth = 1 + p.pulse * beatDrive * .3;
+        for (let i = 0; i < s.field.length; i++) { const baseD = s.field[i] * scale; let a = 0;
+          if (baseD > .5) { const qd = clamp(baseD / Math.max(1, maxR), 0, 1), wave = (s.warpA[i] * ca + s.warpB[i] * sa) * p.gap * (.07 + qd * .12) * (1 + beatDrive * .22), d = baseD + wave;
+            for (let layer = 0; layer < radii.length; layer++) { const rr = radii[layer], q = layer / Math.max(1, n), localGap = p.gap * (1 + layer * .13), thick = Math.min(localGap * .72, p.width * (.42 + q * .72) * audioWidth), edge = Math.abs(d - rr);
+              if (edge <= thick * .62) { const feather = 1 - edge / (thick * .62 + .001), aa = feather * feather * (3 - 2 * feather); a = Math.max(a, .72 + aa * .28); } } }
+          const j = i * 4; out[j] = out[j + 1] = out[j + 2] = 255; out[j + 3] = Math.round(a * 255); }
+        fg.putImageData(s.fieldImage, 0, 0); }
+      if (!s.gl) { ctx.save(); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.filter = 'blur(.65px)'; ctx.drawImage(fc, 0, 0, W, H); ctx.restore(); }
+      ctx.drawImage(sub, 0, 0); if (raw) { const maxW = W * .82, base = 66 * p.textSize; ctx.font = contourFont(p.font, base); const tw = Math.max(1, ctx.measureText(raw).width), fs = base * Math.min(1, maxW / tw); ctx.font = contourFont(p.font, fs); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = contourInk(p); ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = Math.max(1, fs * .025); ctx.strokeText(raw, W / 2, cy); ctx.fillText(raw, W / 2, cy); }
+      dropFlash(f, p); }
+  },
+
+  punchSymbols: {
+    name: '单图打孔', icon: '🔘', desc: '符号剪切 × 互补色 × 错位采样',
+    hint: '在单张照片上用符号做真正的剪切蒙版：一部分打孔透出根据照片推导的互补底色，一部分显示同图错位采样，少量保留印刷色块。重拍会换新图形并产生快速弹动。',
+    params: [Sel('preset', '符号预设', ['星光 ★✦✪', '天气 ☁☀⛆', '音乐 ♪♫⏺︎', '花朵 ✿✹⊹', '几何 ◼︎▪︎✘', '混合拼贴'], '混合拼贴'), T('symbols', '自定义图形', ''),
+      R('count', '图形数量', 5, 32, 17, 1), R('size', '图形大小', .55, 2.2, 1.06), R('variety', '大小差异', 0, 1, .58), R('shift', '错位采样', 0, 1, .46), R('solid', '印刷色块', 0, 1, .22),
+      Sel('colorMode', '底色取色', ['图片互补色', '图片取色', '手动颜色'], '图片互补色'), C('col', '手动颜色', '#E7E192'), R('pulse', '律动强度', 0, 2, 1.08), R('swap', '卡点换新', 0, 1, .7), R('jitter', '震动', 0, 1, .22), D('drv', 'beat', ['beat', 'kick', 'snare', 'energy'])],
+    state: { nodes: [], key: '', lastHit: -9, was: 0, impulse: 0, mask: null, shiftedMask: null, inkMask: null, photo: null },
+    draw(f, p, t) { const s = this.state;
+      const presets = { '星光 ★✦✪': '★✦✪', '天气 ☁☀⛆': '☁☀⛆', '音乐 ♪♫⏺︎': '♪♫⏺', '花朵 ✿✹⊹': '✿✹⊹', '几何 ◼︎▪︎✘': '◼▪✘', '混合拼贴': '☁★☻♪♫✪✦✿✹✘☀⛆⊹⏺◼▪' };
+      const raw = (p.symbols || '').trim() || presets[p.preset] || presets['混合拼贴'];
+      const symbols = typeof Intl !== 'undefined' && Intl.Segmenter ? [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(raw)].map(x => x.segment).filter(x => x.trim()) : Array.from(raw).filter(x => x.trim() && x !== '\ufe0e');
+      const n = Math.round(p.count), key = S.srcKey + '|' + n + '|' + raw + '|' + Math.round(p.variety * 20);
+      const makeNode = (i, edgeBias = false) => { const edge = edgeBias || i % 5 === 0, side = i % 2, roll = Math.random(), mode = roll < p.solid * .42 ? 2 : roll < p.solid * .42 + p.shift * .52 ? 1 : 0; return { x: edge ? (side ? rnd(W * .04, W * .2) : rnd(W * .8, W * .96)) : rnd(W * .12, W * .88), y: rnd(H * .06, H * .94), z: lerp(.72, 1.38, rnd(1) * p.variety), rot: rnd(-.22, .22), ph: rnd(0, 6.28), symbol: symbols[i % Math.max(1, symbols.length)] || '★', mode, born: t, pop: rnd(.1, .55) }; };
+      if (s.key !== key || s.nodes.length !== n) { s.key = key; s.nodes = Array.from({ length: n }, (_, i) => makeNode(i)); }
+      const hit = Math.max(f[p.drv] || 0, f.kick * .92, f.beat * .72), audible = S.playing && (f.energy > .06 || f.bass > .08);
+      if (audible && hit > .5 && s.was <= .5 && t - s.lastHit > .16) { s.lastHit = t; s.impulse = Math.max(s.impulse, hit); const swaps = Math.max(1, Math.round(n * (.08 + p.swap * .22))); for (let k = 0; k < swaps; k++) { const i = Math.floor(rnd(n)); s.nodes[i] = makeNode(i, Math.random() < .3); s.nodes[i].pop = 1; } }
+      s.was = hit; s.impulse *= .84;
+      const accent = splitAccent(), ar = hex2rgb(accent), inv = ar.map(v => Math.round(lerp(255 - v, 255, .08))), complement = '#' + inv.map(v => v.toString(16).padStart(2, '0')).join('');
+      const bg = p.colorMode === '手动颜色' ? p.col : p.colorMode === '图片取色' ? accent : complement;
+      if (!s.mask) { for (const k of ['mask','shiftedMask','inkMask','photo']) { s[k] = document.createElement('canvas'); s[k].width = W; s[k].height = H; } }
+      const masks = [s.mask, s.shiftedMask, s.inkMask], mg = masks.map(c => c.getContext('2d')); mg.forEach(g => g.clearRect(0, 0, W, H));
+      const drive = audible ? clamp((f[p.drv] || 0) * .85 + f.kick * .65 + f.energy * .22, 0, 1.7) : 0, kickScale = 1 + p.pulse * (drive * .13 + s.impulse * .19), shake = p.jitter * (drive * 4.5 + s.impulse * 3.5);
+      for (let i = 0; i < s.nodes.length; i++) { const q = s.nodes[i]; q.pop *= .86; const base = (34 + (i % 4) * 9) * p.size * q.z, scale = kickScale * (1 + q.pop * .24), g = mg[q.mode]; g.save(); g.translate(q.x + Math.sin(t * 2.1 + q.ph) * shake, q.y + Math.cos(t * 1.7 + q.ph) * shake); g.rotate(q.rot + Math.sin(t * .8 + q.ph) * p.jitter * .035); g.scale(scale, scale); g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `900 ${base}px "Arial Unicode MS", "Apple Symbols", "Noto Sans Symbols 2", sans-serif`; g.fillText(q.symbol, 0, 0); g.restore(); }
+      const pg = s.photo.getContext('2d'); pg.globalCompositeOperation = 'source-over'; pg.clearRect(0, 0, W, H); pg.drawImage(src, 0, 0); pg.globalCompositeOperation = 'destination-out'; pg.drawImage(s.mask, 0, 0); pg.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H); ctx.drawImage(s.photo, 0, 0);
+      const sx = (10 + p.shift * 34) * Math.sin(t * .43 + .7), sy = (8 + p.shift * 24) * Math.cos(t * .37); ctx.save(); ctx.globalAlpha = .68 + p.shift * .28; ctx.globalCompositeOperation = 'source-over'; const clipped = s.shiftedMask.getContext('2d'); clipped.globalCompositeOperation = 'source-in'; clipped.drawImage(src, sx, sy); clipped.globalCompositeOperation = 'source-over'; ctx.drawImage(s.shiftedMask, 0, 0); ctx.restore();
+      const ig = s.inkMask.getContext('2d'); ig.globalCompositeOperation = 'source-in'; ig.fillStyle = accent; ig.fillRect(0, 0, W, H); ig.globalCompositeOperation = 'source-over'; ctx.save(); ctx.globalAlpha = .34 + p.solid * .64; ctx.drawImage(s.inkMask, 0, 0); ctx.restore();
+      ctx.save(); ctx.globalAlpha = .08; ctx.fillStyle = '#111'; for (let i = 0; i < 320; i++) ctx.fillRect((i * 83) % W, (i * 137) % H, 1, 1); ctx.restore(); dropFlash(f, p); }
+  },
 
   scan: {
     name: '像素扫描', icon: '🔍', desc: '高光方块逐行显影', hint: '参考视频 4：一条扫描带从上往下走，带内亮部被量化成发光小方块，走过的地方留下渐隐余辉。扫描一圈的时间跟小节对齐。',
@@ -751,10 +925,11 @@ const FX = {
 
   hud: {
     name: '风迹', icon: '🌬️', desc: '文字成网 · 随风成浪 · 跟拍起伏', hint: '按参考视频复刻：大号文字标记之间用弯曲点阵连成一张网，网面像风中的薄布一样连续起伏。英文按完整单词拆分，中文、韩文、日文等文字按单字拆分，[风] 类标记保持整体。音乐能量经过平滑包络后控制湍流强度。',
-    params: [T('text', '文案', '[风]'), R('size', '字号', .7, 1.6, 1), R('wind', '湍流', 0, 1, .68), R('wave', '起伏', 0, 1, .62), C('col', '颜色', '#d9fff0')],
+    params: [Sel('copy', '文字来源', ['自定义文字', '自动歌词'], '自定义文字'), T('text', '文案', '[风]'), R('size', '字号', .7, 1.6, 1), R('wind', '湍流', 0, 1, .68), R('wave', '起伏', 0, 1, .62), C('col', '颜色', '#d9fff0')],
     state: { nodes: [], edges: [], key: '', smoothE: 0, smoothH: 0, pulse: 0, phase: 0, dash: 0, lastBeat: 0 },
     draw(f, p, t) { const s = this.state;
-      const raw = (p.text || '').trim() || '[风]';
+      const selectedText = p.copy === '自动歌词' ? activeLyricAt(t) : p.text;
+      const raw = (selectedText || '').trim() || '[风]';
       let words = raw.match(/\[[^\]]+\]|[A-Za-z0-9][A-Za-z0-9'\u2019+\-]*|[\p{L}\p{N}]|\p{Extended_Pictographic}/gu) || [];
       if (!words.length) words = ['[风]'];
       const n = 15, key = words.join('|');
@@ -852,25 +1027,25 @@ const FX = {
       dropFlash(f, p); } },
 
   subjectSplit: {
-    name: '歌词双生分屏', icon: '✂️', desc: '文字剪影 × 抠图主体 × 歌词掉落',
+    name: '上下分屏', icon: '✂️', desc: '文字剪影 × 抠图主体 × 歌词掉落',
     hint: '适配横图/宽幅人物图：上半保留环境并把主体变成由歌词填满的纯色剪影；下半为取色纸张背景和真实抠图主体。上下使用完全相同的裁切与比例。素材仅做筛选提示，仍由你手动选择。',
-    params: [Sel('copy', '文字来源', ['自定义文字', '自动歌词'], '自定义文字'), T('text', '自定义文案', "DON'T YOU WANT TO / BE THE ONE / WHEN YOU GO / NOWHERE ELSE TO GO"),
+    params: [Sel('copy', '文字来源', ['自定义文字', '自动歌词'], '自定义文字'), T('text', '自定义文案', "don't you want to / be the one / when you go / nowhere else to go"),
       Sel('bg', '背景', ['图片取色', '手动纯色', '深色取色'], '图片取色'), C('col', '手动颜色', '#efefa9'),
-      R('type', '歌词字号', .7, 1.5, 1), R('motion', '律动幅度', 0, 2, 1), R('fall', '掉落速度', .35, 1.8, .78), R('stars', '星点数量', 0, 1, .38), R('move', '主体律动', 0, 1, .18), D('drv', 'bass', ['bass', 'kick', 'beat', 'energy'])],
+      R('type', '字体/符号大小', .6, 2, 1.1), R('motion', '律动幅度', 0, 2, 1), R('fall', '掉落速度', .35, 1.8, .7), R('stars', '星点数量', 0, 1, .38), R('move', '主体律动', 0, 1, .18), D('drv', 'bass', ['bass', 'kick', 'beat', 'energy'])],
     state: { hit: 0, last: -9, lastDrop: -9, word: 0, drops: [], sparks: [], inside: [], nodes: [], insideKey: '', tm: null, plate: null, topSub: null, bottomSub: null },
     draw(f, p, t) { const s = this.state, cut = Math.round(H * .5), pal = imagePalette(), frame = splitFrame(), sub = S.cache.splitSub, sb = sub ? splitSubjectBounds(sub) : { x0: W * .2, y0: 12, x1: W * .8, y1: cut - 12 };
       const topSub = s.topSub || (s.topSub = document.createElement('canvas')), bottomSub = s.bottomSub || (s.bottomSub = document.createElement('canvas')); topSub.width = bottomSub.width = W; topSub.height = bottomSub.height = H;
       const ta = topSub.getContext('2d'), ba = bottomSub.getContext('2d'); ta.clearRect(0, 0, W, H); ba.clearRect(0, 0, W, H);
       if (sub) { ta.drawImage(sub, 0, 0, W, cut); const edge = ta.getImageData(0, 0, W, cut); for (let i = 3; i < edge.data.length; i += 4) { let a = clamp((edge.data[i] / 255 - .045) / .72, 0, 1); a = a * a * (3 - 2 * a); edge.data[i] = Math.round(a * 255); } ta.putImageData(edge, 0, 0); ba.drawImage(sub, 0, cut, W, H - cut); }
-      const custom = (p.text || '').split(/[\/\n|,，]+/).map(x => x.trim()).filter(Boolean), liveLyric = lyricAt(t).trim();
-      const phrases = p.copy === '自动歌词' && liveLyric ? [liveLyric] : custom.length ? custom : ['ON LOOP'];
+      const custom = (p.text || '').split(/[\/\n|,，]+/).map(x => x.trim()).filter(Boolean), liveLyric = activeLyricAt(t).trim();
+      const phrases = p.copy === '自动歌词' ? [liveLyric || '暂无歌词'] : custom.length ? custom : ['ON LOOP'];
       const active = phrases[s.word % phrases.length] || phrases[0], pulse = Math.max(f.beat, f.kick);
       if ((pulse > .55 || (!S.playing && t - s.last > 1.25)) && t - s.last > .28) { s.last = t; s.word++; s.hit = 1; }
       if ((pulse > .62 || (!S.playing && t - s.lastDrop > 2.8)) && t - s.lastDrop > 2.8) { s.lastDrop = t;
-        const line = p.copy === '自动歌词' && liveLyric ? liveLyric : phrases[s.word % phrases.length];
+        const line = p.copy === '自动歌词' ? (liveLyric || '暂无歌词') : phrases[s.word % phrases.length];
         const side = Math.random() < .5;
-        s.drops.push({ text: line, x: side ? rnd(22, W * .24) : rnd(W * .62, W * .76), y: cut + rnd(-8, 12), vy: rnd(22, 34) * p.fall, rot: rnd(-.035, .035), born: t, life: rnd(4.5, 5.8), size: rnd(18, 23), side }); s.drops = s.drops.slice(-2);
-        const count = Math.round(1 + p.stars * 4); for (let i = 0; i < count; i++) s.sparks.push({ x: rnd(18, W - 18), y: cut + rnd(-20, 12), vy: rnd(34, 74) * p.fall, vx: rnd(-8, 8), born: t, life: rnd(2.5, 4.2), z: rnd(2.5, 5.5), ph: rnd(0, 7) }); s.sparks = s.sparks.slice(-14); }
+        s.drops.push({ text: line, x: side ? rnd(22, W * .24) : rnd(W * .62, W * .76), y: cut + rnd(-8, 12), vy: rnd(22, 34), rot: rnd(-.035, .035), born: t, life: rnd(4.5, 5.8), sizeScale: rnd(.88, 1.14), side }); s.drops = s.drops.slice(-2);
+        const count = Math.round(1 + p.stars * 4); for (let i = 0; i < count; i++) s.sparks.push({ x: rnd(18, W - 18), y: cut + rnd(-20, 12), vy: rnd(34, 74), vx: rnd(-8, 8), born: t, life: rnd(2.5, 4.2), zScale: rnd(.78, 1.18), ph: rnd(0, 7) }); s.sparks = s.sparks.slice(-14); }
       s.hit *= .86;
       const bg = p.bg === '手动纯色' ? p.col : p.bg === '深色取色' ? pal.deep : splitAccent(), ink = p.bg === '深色取色' ? '#f5f3ee' : pal.deep;
 
@@ -880,26 +1055,26 @@ const FX = {
       const plate = s.plate || (s.plate = document.createElement('canvas')); plate.width = W; plate.height = H; const pg = plate.getContext('2d'); pg.globalCompositeOperation = 'source-over'; pg.clearRect(0, 0, W, H); pg.drawImage(topSub, 0, 0); pg.globalCompositeOperation = 'source-in'; pg.fillStyle = bg; pg.fillRect(0, 0, W, H); pg.globalCompositeOperation = 'source-over';
       ctx.save(); ctx.shadowColor = bg; ctx.shadowBlur = 1 + f.high * 2; ctx.drawImage(plate, 0, 0); ctx.restore();
       const tm = s.tm || (s.tm = document.createElement('canvas')); tm.width = W; tm.height = H; const tg = tm.getContext('2d'); tg.globalCompositeOperation = 'source-over'; tg.clearRect(0, 0, W, H);
-      const copyPool = (p.copy === '自动歌词' && liveLyric ? [liveLyric] : custom.length ? custom : ['ON LOOP']).flatMap(q => { const ws = q.split(/\s+/).filter(Boolean); return ws.length > 1 ? ws : [q]; });
+      const copyPool = (p.copy === '自动歌词' ? [liveLyric || '暂无歌词'] : custom.length ? custom : ['ON LOOP']).flatMap(q => { const ws = q.split(/\s+/).filter(Boolean); return ws.length > 1 ? ws : [q]; });
       const bx0 = clamp(sb.x0, 12, W - 40), bx1 = clamp(sb.x1, bx0 + 30, W - 12), by0 = clamp(sb.y0, 12, cut - 30), by1 = clamp(sb.y1, by0 + 24, cut - 10);
       const insideArea = Math.max(1, (bx1 - bx0) * (by1 - by0)), insideN = clamp(Math.round(insideArea / (1900 - p.type * 280)), 72, 112), insideKey = S.srcKey + '|' + copyPool.join('|') + '|' + Math.round(p.type * 10) + '|' + Math.round(bx0) + '|' + insideN;
-      if (s.insideKey !== insideKey || s.inside.length !== insideN) { const cols = Math.max(7, Math.round(Math.sqrt(insideN * (bx1 - bx0) / Math.max(1, by1 - by0)))), rows = Math.ceil(insideN / cols); s.insideKey = insideKey; s.inside = Array.from({ length: insideN }, (_, i) => { const row = Math.floor(i / cols), col = i % cols, targetX = bx0 + (col + .5) * (bx1 - bx0) / cols, targetY = by0 + (row + .5) * (by1 - by0) / rows; return { text: copyPool[i % copyPool.length], x: targetX + rnd(-4, 4), y: by0 - 12 - row * rnd(5, 9), targetX, targetY, vx: rnd(-.22, .22), vy: rnd(6.2, 9.4), z: rnd(.72, 1), ph: rnd(0, 7), angle: rnd(-.025, .025), va: 0, pulse: 0, delay: rnd(0, .05), entered: false, born: t, hw: 20 }; }); const spots = [[.22,.2],[.72,.22],[.48,.45],[.22,.68],[.74,.7]]; s.nodes = spots.map((v, i) => ({ x: bx0 + v[0] * (bx1 - bx0), y: by0 + v[1] * (by1 - by0), band: i % 4, ph: i * 1.27 })); }
-      const amp = p.motion == null ? 1 : p.motion, fs = 14 + p.type * 5.5, mx = (bx0 + bx1) / 2, my = (by0 + by1) / 2, flow = amp * (.012 + f.bass * .075), beatWave = Math.sin(f.beatPhase * Math.PI * 2);
+      if (s.insideKey !== insideKey || s.inside.length !== insideN) { const cols = Math.max(7, Math.round(Math.sqrt(insideN * (bx1 - bx0) / Math.max(1, by1 - by0)))), rows = Math.ceil(insideN / cols); s.insideKey = insideKey; s.inside = Array.from({ length: insideN }, (_, i) => { const row = Math.floor(i / cols), col = i % cols, targetX = bx0 + (col + .5) * (bx1 - bx0) / cols, targetY = by0 + (row + .5) * (by1 - by0) / rows; return { text: copyPool[i % copyPool.length], x: targetX + rnd(-4, 4), y: by0 - 12 - row * rnd(5, 9), targetX, targetY, vx: rnd(-.2, .2), vy: rnd(5.4, 8.2), z: rnd(.72, 1), ph: rnd(0, 7), angle: rnd(-.025, .025), va: 0, pulse: 0, delay: rnd(0, .05), entered: false, born: t, hw: 20 }; }); const spots = [[.22,.2],[.72,.22],[.48,.45],[.22,.68],[.74,.7]]; s.nodes = spots.map((v, i) => ({ x: bx0 + v[0] * (bx1 - bx0), y: by0 + v[1] * (by1 - by0), band: i % 4, ph: i * 1.27 })); }
+      const amp = p.motion == null ? 1 : p.motion, fs = 13 + p.type * 8, mx = (bx0 + bx1) / 2, my = (by0 + by1) / 2, flow = amp * (.012 + f.bass * .075), beatWave = Math.sin(f.beatPhase * Math.PI * 2);
       tg.fillStyle = ink; tg.font = `700 ${fs}px Manrope, "PingFang SC", sans-serif`; tg.textBaseline = 'middle'; tg.textAlign = 'center';
       const nodeBands = [f.kick, f.bass, f.energy, f.high];
       for (const q of s.inside) { if (t - q.born < q.delay) continue; q.hw = Math.min((bx1 - bx0) * .14, 46, Math.max(10, tg.measureText(q.text).width * q.z * .5)); q.hh = fs * q.z * .48; const rx = q.x - mx, ry = q.y - my, rl = Math.max(30, Math.hypot(rx, ry)), landing = q.entered && t - q.enterAt < .72; let localPulse = 0; if (q.entered) for (const n of s.nodes) { const dxn = q.x - n.x, dyn = q.y - n.y, dn = Math.max(8, Math.hypot(dxn, dyn)), level = clamp(nodeBands[n.band] * .78 + f.beat * .34 + Math.max(0, Math.sin(f.beatPhase * Math.PI * 2 + n.ph)) * f.energy * .18, 0, 1), radius = 62 + level * 78, influence = dn < radius ? (1 - dn / radius) * level : 0; if (influence > 0) { localPulse = Math.max(localPulse, influence); q.vx += dxn / dn * influence * amp * .34; q.vy += dyn / dn * influence * amp * .26 + influence * amp * .035; q.va += (dxn >= 0 ? 1 : -1) * influence * amp * .014; } }
-        q.pulse = Math.max(q.pulse * .82, localPulse); const sizeHit = 1 + amp * (f.energy * .12 + f.kick * .26 + f.beat * .1 + q.pulse * .58); q.hw *= sizeHit; q.hh *= sizeHit; q.renderScale = sizeHit; q.vx += (-ry / rl) * flow + amp * Math.sin(t * .9 + q.ph) * (.006 + f.high * .035) + amp * beatWave * .018; q.vy += (q.entered ? .055 : .24) + amp * ((rx / rl) * flow + Math.cos(t * .75 + q.ph) * (.004 + f.high * .025)); q.vx = clamp(q.vx * (q.entered ? .975 : .994), -4.2, 4.2); q.vy = clamp(q.vy * (q.entered ? .982 : .996), -1.4, 7.2); q.va *= .94; q.angle = clamp(q.angle + q.va, -.22, .22); q.x += q.vx; q.y += q.vy; if (!q.entered && q.y >= by0 + q.hh) { q.entered = true; q.enterAt = t; } }
+        q.pulse = Math.max(q.pulse * .82, localPulse); const sizeHit = 1 + amp * (f.energy * .12 + f.kick * .26 + f.beat * .1 + q.pulse * .58); q.hw *= sizeHit; q.hh *= sizeHit; q.renderScale = sizeHit; q.vx += (-ry / rl) * flow + amp * Math.sin(t * .9 + q.ph) * (.006 + f.high * .035) + amp * beatWave * .018; q.vy += (q.entered ? .05 : .2) + amp * ((rx / rl) * flow + Math.cos(t * .75 + q.ph) * (.004 + f.high * .025)); q.vx = clamp(q.vx * (q.entered ? .975 : .994), -4.2, 4.2); q.vy = clamp(q.vy * (q.entered ? .982 : .996), -1.4, 6.5); q.va *= .94; q.angle = clamp(q.angle + q.va, -.22, .22); q.x += q.vx; q.y += q.vy * (.92 + p.fall * .1); if (!q.entered && q.y >= by0 + q.hh) { q.entered = true; q.enterAt = t; } }
       for (let pass = 0; pass < 5; pass++) { for (let i = 0; i < s.inside.length; i++) for (let j = i + 1; j < s.inside.length; j++) { const a = s.inside[i], b = s.inside[j]; if (!a.entered || !b.entered) continue; const ox = a.hw + b.hw + 3 - Math.abs(a.x - b.x), oy = a.hh + b.hh + 3 - Math.abs(a.y - b.y); if (ox > 0 && oy > 0) { const kickOut = .14 + amp * (f.kick * .42 + f.beat * .18); if (ox < oy) { const dir = a.x < b.x ? -1 : 1; a.x += dir * ox * .54; b.x -= dir * ox * .54; const av = a.vx; a.vx = b.vx * .42 + dir * kickOut; b.vx = av * .42 - dir * kickOut; } else { const dir = a.y < b.y ? -1 : 1; a.y += dir * oy * .54; b.y -= dir * oy * .54; const av = a.vy; a.vy = b.vy * .38 + dir * kickOut; b.vy = av * .38 - dir * kickOut; } const spin = (a.vx - b.vx) * .009; a.va += spin; b.va -= spin; } } for (const q of s.inside) { if (!q.entered) continue; if (q.x - q.hw < bx0 || q.x + q.hw > bx1) { q.x = clamp(q.x, bx0 + q.hw, bx1 - q.hw); q.vx *= -.52; q.va += q.vy * .004; } if (q.y + q.hh > by1) { q.y = by1 - q.hh; q.vy = 0; q.va += q.vx * .004; } if (q.y - q.hh < by0) { q.y = by0 + q.hh; q.vy = Math.max(.35, q.vy); } } }
       for (const q of s.inside) { const breathe = q.z * (q.renderScale || 1); tg.save(); tg.translate(q.x, q.y); tg.rotate(q.angle); tg.scale(breathe, breathe); tg.fillText(q.text, 0, 0); tg.restore(); }
       tg.globalCompositeOperation = 'destination-in'; tg.drawImage(topSub, 0, 0); tg.globalCompositeOperation = 'source-over'; ctx.globalAlpha = .94; const shake = amp * f.kick * 1.25; ctx.drawImage(tm, rnd(-shake, shake), rnd(-shake, shake)); ctx.globalAlpha = 1; ctx.restore();
 
       // Lower half: picked paper colour, enlarged live cutout, open space for falling lyrics.
       ctx.fillStyle = bg; ctx.fillRect(0, cut, W, H - cut); ctx.save(); ctx.globalAlpha = .045; ctx.fillStyle = ink; for (let i = 0; i < 240; i++) { const x = (i * 83) % W, y = cut + ((i * 137) % (H - cut)); ctx.fillRect(x, y, 1, 1); } ctx.restore();
-      const drive = clamp(f[p.drv], 0, 1); ctx.save(); ctx.beginPath(); ctx.rect(0, cut, W, H - cut); ctx.clip(); ctx.globalAlpha = 1; ctx.drawImage(bottomSub, 0, 0); ctx.restore();
+      const drive = clamp(f[p.drv], 0, 1), subjectScale = 1 + p.move * (drive * .055 + f.kick * .025), subjectLift = p.move * (drive * 12 + f.beat * 5); ctx.save(); ctx.beginPath(); ctx.rect(0, cut, W, H - cut); ctx.clip(); ctx.globalAlpha = 1; ctx.translate(W / 2, cut + (H - cut) / 2 - subjectLift); ctx.scale(subjectScale, subjectScale); ctx.drawImage(bottomSub, -W / 2, -(cut + (H - cut) / 2)); ctx.restore();
 
-      s.drops = s.drops.filter(d => t - d.born < d.life && d.y < H + 150); for (const d of s.drops) { const age = t - d.born; d.y += d.vy / 60 * (1 + f.kick * 2.2); d.x += Math.sin(t * 1.4 + d.born * 3) * .18; const fade = Math.min(1, age * 3) * Math.min(1, (d.life - age) * 1.5); ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.rot + Math.sin(t + d.born) * .018); ctx.globalAlpha = fade * .9; ctx.fillStyle = ink; ctx.strokeStyle = bg; ctx.lineWidth = 2; ctx.font = `700 ${d.size}px Manrope, "PingFang SC", sans-serif`; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-        const ws = d.text.split(/\s+/).filter(Boolean), maxW = 170; let yy = 0, line = ''; for (const w of ws) { const test = line ? line + ' ' + w : w; if (ctx.measureText(test).width > maxW && line) { ctx.strokeText(line, 0, yy); ctx.fillText(line, 0, yy); line = w; yy += d.size * .94; } else line = test; } if (line) { ctx.strokeText(line, 0, yy); ctx.fillText(line, 0, yy); } ctx.restore(); }
-      s.sparks = s.sparks.filter(q => t - q.born < q.life && q.y < H + 20); for (const q of s.sparks) { const age = t - q.born; q.y += q.vy / 60 * (1 + f.kick * 1.8); q.x += q.vx / 60 + Math.sin(t * 2 + q.ph) * .12; const a = Math.min(1, age * 5) * Math.min(1, (q.life - age) * 2); ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(t * .35 + q.ph); ctx.globalAlpha = a * (.55 + f.high * .4); ctx.fillStyle = p.bg === '深色取色' ? '#fff' : ink; ctx.beginPath(); for (let j = 0; j < 10; j++) { const r = j % 2 ? q.z * .42 : q.z, an = -Math.PI / 2 + j * Math.PI / 5; if (!j) ctx.moveTo(Math.cos(an) * r, Math.sin(an) * r); else ctx.lineTo(Math.cos(an) * r, Math.sin(an) * r); } ctx.closePath(); ctx.fill(); ctx.restore(); }
+      s.drops = s.drops.filter(d => t - d.born < d.life && d.y < H + 150); for (const d of s.drops) { const age = t - d.born, dSize = (13 + p.type * 8) * (d.sizeScale || 1); d.y += d.vy / 60 * p.fall * (1 + f.kick * 2.2); d.x += Math.sin(t * 1.4 + d.born * 3) * .18; const fade = Math.min(1, age * 3) * Math.min(1, (d.life - age) * 1.5); ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.rot + Math.sin(t + d.born) * .018); ctx.globalAlpha = fade * .9; ctx.fillStyle = ink; ctx.strokeStyle = bg; ctx.lineWidth = Math.max(1.5, dSize * .09); ctx.font = `700 ${dSize}px Manrope, "PingFang SC", sans-serif`; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        const ws = d.text.split(/\s+/).filter(Boolean), maxW = 170 + p.type * 18; let yy = 0, line = ''; for (const w of ws) { const test = line ? line + ' ' + w : w; if (ctx.measureText(test).width > maxW && line) { ctx.strokeText(line, 0, yy); ctx.fillText(line, 0, yy); line = w; yy += dSize * .94; } else line = test; } if (line) { ctx.strokeText(line, 0, yy); ctx.fillText(line, 0, yy); } ctx.restore(); }
+      s.sparks = s.sparks.filter(q => t - q.born < q.life && q.y < H + 20); for (const q of s.sparks) { const age = t - q.born, z = (2.2 + p.type * 2.7) * (q.zScale || 1); q.y += q.vy / 60 * p.fall * (1 + f.kick * 1.8); q.x += q.vx / 60 + Math.sin(t * 2 + q.ph) * .12; const a = Math.min(1, age * 5) * Math.min(1, (q.life - age) * 2); ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(t * .35 + q.ph); ctx.globalAlpha = a * (.55 + f.high * .4); ctx.fillStyle = p.bg === '深色取色' ? '#fff' : ink; ctx.beginPath(); for (let j = 0; j < 10; j++) { const r = j % 2 ? z * .42 : z, an = -Math.PI / 2 + j * Math.PI / 5; if (!j) ctx.moveTo(Math.cos(an) * r, Math.sin(an) * r); else ctx.lineTo(Math.cos(an) * r, Math.sin(an) * r); } ctx.closePath(); ctx.fill(); ctx.restore(); }
       ctx.globalAlpha = 1; ctx.fillStyle = ink; ctx.globalAlpha = .18 + f.high * .35; ctx.fillRect(0, cut - 1, W, 1 + f.high * 2); ctx.globalAlpha = 1; dropFlash(f, p); } },
 
   mosaic: { name: '马赛克脉冲', icon: '🟦', desc: '格子随能量呼吸', hint: '整幅画面量化成方格，格子大小跟着能量和 Kick 呼吸，重拍瞬间变粗再回落。',
@@ -976,14 +1151,14 @@ const FX = {
       ctx.globalAlpha = 1; dropFlash(f, p); } },
 
 };
-const FX_ORDER = ['none', 'glitch', 'scan', 'dots', 'mosaic', 'warhol', 'ascii', 'rain', 'bars', 'hud', 'pixelReveal', 'stretchBands', 'subjectSplit'];
+const FX_ORDER = ['none', 'hud', 'subjectSplit', 'glitch', 'contourField', 'punchSymbols', 'scan', 'dots', 'mosaic', 'warhol', 'ascii', 'rain', 'bars', 'pixelReveal', 'stretchBands'];
 
 const FX_CAPS = {
   none: ['9:16 素材适配'], glitch: ['分块采样', 'RGB 通道分离', 'Kick/Hi-hat 瞬态检测'], scan: ['亮度降采样', '小节对齐', '高频/能量驱动'],
   dots: ['亮度阈值', 'LED 点阵量化', '高频/节拍驱动'], mosaic: ['画面量化', '低频脉冲', '惯性回弹'], warhol: ['多格重排', '色相变换', '重拍触发'],
   ascii: ['亮度字符映射', '能量密度驱动'], rain: ['程序化文字粒子', 'Hi-hat/高频驱动'], bars: ['实时 FFT', '频带映射', '包络平滑'],
   hud: ['短标记自动分组', '曲线点阵网格', '流动高亮点', '双层湍流场', 'CH/QUERY 数据标注', '音乐位移波'], pixelReveal: ['亮度/主体目标', '像素重采样', '扫描带', '粒子系统'],
-  stretchBands: ['局部色彩采样', '横向像素延展', '主体分割保护', '节拍状态机'],
+  contourField: ['MODNet 主体蒙版', '蒙版膨胀/差集', '文字轮廓合并', '低频/节拍扩散'], punchSymbols: ['字形蒙版', '照片互补色推导', '同图错位采样', '节拍触发替换'], stretchBands: ['局部色彩采样', '横向像素延展', '主体分割保护', '节拍状态机'],
   subjectSplit: ['实时主体分割', '前景/背景分层', '图片取色', '轮廓文字填充', '高低频/节拍驱动']
 };
 
@@ -1018,18 +1193,18 @@ const fmtT = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart
 const spec = $('#spec'), spctx = spec.getContext('2d');
 const specSm = new Float32Array(56);
 function drawSpectrum(f) {
-  const w = spec.width, h = spec.height, n = specSm.length, gap = 3, bw = (w - gap * (n - 1)) / n;
+  const w = spec.width, h = spec.height, n = specSm.length, gap = 5, bw = (w - gap * (n - 1)) / n;
   spctx.clearRect(0, 0, w, h);
+  spctx.strokeStyle = 'rgba(255,255,255,.055)'; spctx.lineWidth = 2; spctx.beginPath(); spctx.moveTo(0, h - 5); spctx.lineTo(w, h - 5); spctx.stroke();
   for (let i = 0; i < n; i++) {
     let v = 0;
     if (freq && S.playing) { const lo = Math.floor(Math.pow(i / n, 1.75) * 480) + 1, hi = Math.max(lo + 2, Math.floor(Math.pow((i + 1) / n, 1.75) * 480));
       let s = 0; for (let k = lo; k < hi; k++) s += freq[k]; v = clamp(s / (hi - lo) / 175 * (0.6 + i / n * 1.0), 0, 1); }
-    specSm[i] = Math.max(Math.max(v * 1.25, 0.02 + 0.015 * Math.sin(i * 0.7 + performance.now() / 900)), specSm[i] * 0.87);
-    const bh = Math.max(2, specSm[i] * h), x = i * (bw + gap);
+    specSm[i] = Math.max(Math.max(v * 1.08, 0.018 + 0.01 * Math.sin(i * 0.7 + performance.now() / 900)), specSm[i] * 0.9);
+    const bh = Math.max(4, specSm[i] * (h - 12)), x = i * (bw + gap), y = h - 5 - bh;
     const g = spctx.createLinearGradient(0, h - bh, 0, h);
-    g.addColorStop(0, '#bff3fb'); g.addColorStop(.45, '#4ad4f0'); g.addColorStop(1, 'rgba(74,212,240,.25)');
-    spctx.fillStyle = g; spctx.fillRect(x, h - bh, bw, bh);
-    spctx.fillStyle = 'rgba(255,255,255,.10)'; spctx.fillRect(x, h - 1.5, bw, 1.5);
+    g.addColorStop(0, 'rgba(240,240,234,.9)'); g.addColorStop(.5, 'rgba(190,201,194,.62)'); g.addColorStop(1, 'rgba(148,160,153,.12)');
+    spctx.fillStyle = g; spctx.beginPath(); spctx.roundRect(x, y, bw, bh, Math.min(bw / 2, 6)); spctx.fill();
   }
 }
 function setMeter(a, b, v) { $(a).textContent = v.toFixed(2); $(b).style.width = clamp(v, 0, 1) * 100 + '%'; }
@@ -1038,13 +1213,16 @@ function setMeter(a, b, v) { $(a).textContent = v.toFixed(2); $(b).style.width =
 const tlc = $('#tlc'), tctx = tlc.getContext('2d');
 function drawTimeline(t = 0) {
   const A = S.analysis, w = tlc.width, h = tlc.height; tctx.clearRect(0, 0, w, h);
-  if (!A) { tctx.fillStyle = '#4b4a46'; tctx.font = '600 30px Manrope'; tctx.fillText('选歌后显示节拍 / 段落 / Drop', 22, h / 2 + 11); return; }
+  if (!A) { tctx.fillStyle = '#555650'; tctx.font = '600 27px Manrope'; tctx.fillText('选择音乐后开始', 26, h / 2 + 10); return; }
   const X = s => s / A.dur * w;
-  for (const s of A.segs) { tctx.fillStyle = ['#2b3038', '#3f6b7a', '#ffb04a'][s.lvl]; tctx.globalAlpha = .34; tctx.fillRect(X(s.a), 0, X(s.b) - X(s.a), h); }
-  tctx.globalAlpha = 1; tctx.fillStyle = 'rgba(255,255,255,.18)'; for (const b of A.beats) tctx.fillRect(X(b), h - 10, 2, 10); tctx.fillStyle = 'rgba(255,255,255,.4)'; for (const b of A.downbeats) tctx.fillRect(X(b), h - 20, 2.5, 20);
-  tctx.beginPath(); tctx.moveTo(0, h); A.curve.forEach((v, i) => tctx.lineTo(i / 199 * w, h - v * (h - 10))); tctx.lineTo(w, h); tctx.closePath(); tctx.fillStyle = 'rgba(240,236,228,.42)'; tctx.fill();
-  for (const d of A.drops) { tctx.fillStyle = '#ff6b5e'; tctx.fillRect(X(d) - 1.5, 0, 3, h); tctx.font = '700 24px Manrope'; tctx.fillText('DROP', X(d) + 8, 28); }
-  tctx.fillStyle = '#fff'; tctx.fillRect(X(t) - 1, 0, 2, h); tctx.fillStyle = 'rgba(255,255,255,.35)'; tctx.fillRect(X(t) - 5, 0, 10, 3);
+  const cy = h * .52, amp = h * .39, px = X(t);
+  for (const s of A.segs) { tctx.fillStyle = ['rgba(255,255,255,.012)','rgba(121,242,166,.022)','rgba(255,176,74,.035)'][s.lvl]; tctx.fillRect(X(s.a), 0, X(s.b) - X(s.a), h); }
+  const wave = () => { tctx.beginPath(); A.curve.forEach((v, i) => { const x = i / 199 * w, y = cy - (5 + v * amp); i ? tctx.lineTo(x, y) : tctx.moveTo(x, y); }); for (let i = A.curve.length - 1; i >= 0; i--) { const v = A.curve[i], x = i / 199 * w; tctx.lineTo(x, cy + (5 + v * amp)); } tctx.closePath(); };
+  wave(); const idle = tctx.createLinearGradient(0, 0, 0, h); idle.addColorStop(0, 'rgba(214,216,211,.36)'); idle.addColorStop(.5, 'rgba(214,216,211,.15)'); idle.addColorStop(1, 'rgba(214,216,211,.3)'); tctx.fillStyle = idle; tctx.fill();
+  tctx.save(); tctx.beginPath(); tctx.rect(0, 0, Math.max(0, px), h); tctx.clip(); wave(); const played = tctx.createLinearGradient(0, 0, w, 0); played.addColorStop(0, 'rgba(222,225,228,.78)'); played.addColorStop(1, 'rgba(121,242,166,.72)'); tctx.fillStyle = played; tctx.fill(); tctx.restore();
+  tctx.fillStyle = 'rgba(255,255,255,.12)'; for (const b of A.downbeats) { const x = X(b); tctx.beginPath(); tctx.arc(x, h - 7, 1.4, 0, Math.PI * 2); tctx.fill(); }
+  for (const d of A.drops) { const x = X(d); tctx.fillStyle = 'rgba(255,112,91,.72)'; tctx.fillRect(x - 1, 7, 2, h - 14); tctx.beginPath(); tctx.arc(x, 7, 3.2, 0, Math.PI * 2); tctx.fill(); }
+  tctx.fillStyle = '#f6f5f1'; tctx.fillRect(px - 1.3, 4, 2.6, h - 8); tctx.beginPath(); tctx.arc(px, 5, 3.4, 0, Math.PI * 2); tctx.fill();
 }
 $('#tl').addEventListener('click', e => { if (!S.buffer) return; const r = e.currentTarget.getBoundingClientRect(); const at = (e.clientX - r.left) / r.width * S.buffer.duration; play(at); });
 
@@ -1052,8 +1230,8 @@ $('#tl').addEventListener('click', e => { if (!S.buffer) return; const r = e.cur
    7. UI
    ===================================================================== */
 function selectFx(id) { S.fx = id; document.querySelectorAll('#fxlist button').forEach(b => b.classList.toggle('on', b.dataset.id === id)); $('#fxname').textContent = FX[id].name + ' · ' + FX[id].desc; const caps = FX_CAPS[id] || []; $('#fxhint').textContent = (FX[id].hint || '') + (caps.length ? '\n技术能力：' + caps.join(' · ') : ''); buildParams();
-  if (id === 'subjectSplit') { if (curTag !== '横图') { curTag = '横图'; document.querySelectorAll('#filters .chip').forEach(b => b.classList.toggle('on', b.textContent === '横图')); renderGallery(true); applyFilter(); toast('已筛选横图，请手动选择素材'); } setSeg(S.isVideo ? '实时视频抠像 · 启动中…' : 'MODNet 高清抠像 · 启动中…', 'working'); setTimeout(() => S.isVideo ? refineSubject() : refineSubjectHQ('split'), 20); }
-  else if (!S.isVideo && ['pixelReveal', 'stretchBands'].includes(id)) { setSeg('MODNet 高清抠像 · 启动中…', 'working'); setTimeout(() => refineSubjectHQ('full'), 20); }
+  if (id === 'subjectSplit') { setSeg(S.isVideo ? '实时视频抠像 · 启动中…' : 'MODNet 高清抠像 · 启动中…', 'working'); setTimeout(() => S.isVideo ? refineSubject() : refineSubjectHQ('split'), 20); }
+  else if (!S.isVideo && ['pixelReveal', 'stretchBands', 'contourField'].includes(id)) { setSeg('MODNet 高清抠像 · 启动中…', 'working'); setTimeout(() => refineSubjectHQ('full'), 20); }
 }
 function buildFxList() { const list = $('#fxlist'); list.innerHTML = '';
   for (const id of FX_ORDER) { const e = FX[id]; if (!e) continue; const b = document.createElement('button'); b.dataset.id = id;
@@ -1063,14 +1241,17 @@ function buildFxList() { const list = $('#fxlist'); list.innerHTML = '';
 function buildParams() {
   const box = $('#params'); box.innerHTML = ''; const defs = FX[S.fx].params, vals = S.params[S.fx];
   if (!defs.length) { box.innerHTML = '<div class="hint">该效果没有可调参数。</div>'; return; }
-  for (const d of defs) { const row = document.createElement('div'); row.className = 'p'; const lab = document.createElement('label'); lab.textContent = d.label; row.appendChild(lab);
+  if (defs.some(d => d.key === 'copy')) { const lyricInfo = document.createElement('div'); lyricInfo.className = 'hint lyric-status';
+    lyricInfo.textContent = S.lyrics.length ? `🎵 当前歌曲「${S.track?.name || '未命名'}」已载入 ${S.lyrics.length} 条歌词，播放时按时间轴切换。` : `🎵 当前歌曲「${S.track?.name || '未选择'}」没有可用歌词；选择自动歌词后会明确显示“暂无歌词”。`;
+    box.appendChild(lyricInfo); }
+  for (const d of defs) { const row = document.createElement('div'); row.className = `p p-${d.type} p-${d.key}`; const lab = document.createElement('label'); lab.textContent = d.label; row.appendChild(lab);
     if (d.type === 'range') { const inp = document.createElement('input'); inp.type = 'range'; inp.min = d.min; inp.max = d.max; inp.step = d.step; inp.value = vals[d.key]; const v = document.createElement('div'); v.className = 'v'; v.textContent = fmt(vals[d.key], d.step); inp.oninput = () => { vals[d.key] = +inp.value; v.textContent = fmt(+inp.value, d.step); if (d.key === 'pitch') delete S.cache['lum' + vals.pitch]; }; row.appendChild(inp); row.appendChild(v); }
     else if (d.type === 'text') { const inp = document.createElement('input'); inp.type = 'text'; inp.value = vals[d.key]; inp.placeholder = '用 / 或逗号分隔'; inp.style.gridColumn = '2/4'; inp.className = 'txt'; inp.oninput = () => vals[d.key] = inp.value; row.appendChild(inp); }
     else if (d.type === 'color') { const inp = document.createElement('input'); inp.type = 'color'; inp.value = vals[d.key]; inp.oninput = () => vals[d.key] = inp.value; row.appendChild(inp); row.appendChild(document.createElement('div')); }
-    else if (d.type === 'select') { const sel = document.createElement('select'); d.opts.forEach(o => { const op = document.createElement('option'); op.textContent = o; op.value = o; op.selected = vals[d.key] === o; sel.appendChild(op); }); sel.onchange = () => vals[d.key] = sel.value; row.appendChild(sel); row.appendChild(document.createElement('div')); }
+    else if (d.type === 'select') { const sel = document.createElement('select'); d.opts.forEach(o => { const op = document.createElement('option'); op.textContent = o; op.value = o; op.selected = vals[d.key] === o; sel.appendChild(op); }); sel.onchange = () => { vals[d.key] = sel.value; if (d.key === 'copy') invalidateTextEffect(S.fx); }; row.appendChild(sel); row.appendChild(document.createElement('div')); }
     else if (d.type === 'driver') { const wrap = document.createElement('div'); wrap.className = 'drv'; (d.only || Object.keys(DRIVERS)).forEach(k => { const c = document.createElement('button'); c.className = 'chip' + (vals[d.key] === k ? ' on' : ''); c.textContent = DRIVERS[k]; c.onclick = () => { vals[d.key] = k; wrap.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === c)); }; wrap.appendChild(c); }); row.appendChild(wrap); }
     box.appendChild(row); }
-  const reset = document.createElement('button'); reset.className = 'chip'; reset.textContent = '重置参数'; reset.style.alignSelf = 'flex-end'; reset.onclick = () => { defs.forEach(d => vals[d.key] = d.def); buildParams(); }; box.appendChild(reset);
+  const reset = document.createElement('button'); reset.className = 'chip param-reset'; reset.textContent = '恢复默认参数'; reset.onclick = () => { defs.forEach(d => vals[d.key] = d.def); buildParams(); }; box.appendChild(reset);
 }
 const fmt = (v, step) => step >= 1 ? String(Math.round(v)) : v.toFixed(2);
 
@@ -1078,6 +1259,12 @@ const fmt = (v, step) => step >= 1 ? String(Math.round(v)) : v.toFixed(2);
 const trackCache = {};
 function parseLRC(raw = '') { const out = []; for (const line of raw.split(/\r?\n/)) { const m = line.match(/^\[(\d+):(\d+(?:\.\d+)?)\](.*)$/); if (m) out.push({ t: +m[1] * 60 + +m[2], text: m[3].trim() }); } return out.sort((a, b) => a.t - b.t); }
 function lyricAt(t = songTime()) { let hit = null; for (const q of S.lyrics) { if (q.t > t) break; hit = q; } return hit ? hit.text : ''; }
+function activeLyricAt(t = songTime()) { return lyricAt(t) || S.lyrics[0]?.text || ''; }
+function invalidateTextEffect(id = S.fx) { const state = FX[id]?.state; if (!state) return;
+  if (id === 'hud') { state.key = ''; state.nodes = []; state.edges = []; }
+  else if (id === 'subjectSplit') { state.insideKey = ''; state.inside = []; state.drops = []; state.word = 0; }
+  else if (id === 'contourField') { state.key = ''; state.mask = null; state.field = null; state.fieldImage = null; }
+}
 window.MFX_MUSIC = { currentTrack: () => S.track, lyricAt, lyrics: () => S.lyrics };
 function buildTracks() { const box = $('#tracks');
   if (PACK_TRACKS.length) { const pg = document.createElement('div'); pg.className = 'grp'; pg.textContent = '测试音乐 · ' + PACK_TRACKS.length + ' 首'; box.appendChild(pg);
@@ -1086,7 +1273,7 @@ function buildTracks() { const box = $('#tracks');
   const g = document.createElement('div'); g.className = 'grp'; g.textContent = '内置曲目'; box.appendChild(g);
   for (const tr of TRACKS) { const b = document.createElement('button'); b.dataset.id = tr.id;
     b.innerHTML = `<div class="t">${tr.name}</div><div class="d">${tr.genre} · ${tr.bpm}</div>`; b.onclick = () => { loadTrack(tr); closeSheet(); }; box.appendChild(b); } }
-function openSheet(kind) { $('#sheet').classList.add('on'); $('#sheetTracks').hidden = kind !== 'tracks'; $('#sheetParams').hidden = kind !== 'params';
+function openSheet(kind) { if (kind === 'params') buildParams(); $('#sheet').classList.add('on'); $('#sheetTracks').hidden = kind !== 'tracks'; $('#sheetParams').hidden = kind !== 'params';
   $('#sheetTitle').textContent = kind === 'tracks' ? '选择音乐' : '参数 · ' + FX[S.fx].name; }
 function closeSheet() { $('#sheet').classList.remove('on'); }
 $('#discBtn').onclick = () => openSheet('tracks');
@@ -1101,7 +1288,7 @@ $('#musicUp2').onclick = () => $('#musicFile').click();
 $('#musicDirBtn2').onclick = () => $('#musicDir').click();
 async function loadTrack(tr) { S.trackId = tr.id;
   document.querySelectorAll('#tracks button').forEach(b => b.classList.toggle('on', b.dataset.id === tr.id));
-  S.track = tr; S.lyrics = parseLRC(tr.lrc || ''); $('#nowT').textContent = tr.name; if (S.playing) pause(); S.pausedAt = 0;
+  S.track = tr; S.lyrics = parseLRC(tr.lrc || ''); invalidateTextEffect(); if ($('#sheet').classList.contains('on') && !$('#sheetParams').hidden) buildParams(); $('#nowT').textContent = tr.name; if (S.playing) pause(); S.pausedAt = 0;
   const disc = $('#discBtn'); disc.style.backgroundImage = tr.cover ? `url("${tr.cover}")` : ''; disc.classList.toggle('has-cover', !!tr.cover);
   try {
     if (tr.kind === 'pack') { $('#status').textContent = '解码并分析中…'; $('#nowD').textContent = (tr.artist || tr.genre) + ' · 内置测试音乐'; if (!trackCache[tr.id]) trackCache[tr.id] = await ac().decodeAudioData(await (await fetch(tr.url)).arrayBuffer()); }
@@ -1109,19 +1296,36 @@ async function loadTrack(tr) { S.trackId = tr.id;
     else if (tr.kind === 'music') { $('#status').textContent = '解码并分析中…'; $('#nowD').textContent = '本地音乐 · 解码分析中…'; if (!trackCache[tr.id]) trackCache[tr.id] = await ac().decodeAudioData(await tr.blob.arrayBuffer()); }
     else { $('#status').textContent = trackCache[tr.id] ? '分析中…' : '首次合成这首曲目（几秒）…'; $('#nowD').textContent = tr.genre + ' · 合成并分析中…'; ac(); if (!trackCache[tr.id]) trackCache[tr.id] = await renderTrack(tr); }
     if (S.trackId !== tr.id) return;
-    await setBuffer(trackCache[tr.id], tr.name); play(0);
+    await setBuffer(trackCache[tr.id], tr.name, tr); play(0);
   } catch (err) { toast('无法解码这个音频'); $('#status').textContent = '解码失败'; }
 }
-async function setBuffer(buf, name) {
+async function setBuffer(buf, name, tr = {}) {
   S.buffer = buf; S.analysis = null; lastBeatIdx = -1; S.lastSection = null;
   const A = await analyze(buf); S.analysis = A;
-  $('#aBpm').textContent = A.bpm; $('#aGenre').textContent = A.genre; drawTimeline(0);
-  $('#nowD').textContent = `${A.genre} · ${A.bpm} bpm · ${fmtT(A.dur)}`;
+  const displayGenre = tr.genre || A.genre, displayBpm = tr.bpm || A.bpm;
+  $('#aBpm').textContent = displayBpm; $('#aGenre').textContent = displayGenre; drawTimeline(0);
+  $('#nowD').textContent = `${displayGenre} · ${displayBpm} bpm · ${fmtT(A.dur)}`;
   $('#status').textContent = '正在播放'; $('#anaSub').textContent = `${A.segs.length} 段 · ${A.drops.length} 个 Drop`;
 }
 $('#musicUp').onclick = () => $('#musicFile').click();
 $('#musicFile').onchange = async e => { const files = [...e.target.files]; if (!files.length) return; await importFiles(files, 'music'); const rec = LIB.music.find(x => x.name === files[0].name.replace(/\.[^.]+$/, '')); if (rec) loadTrack(rec); };
 $('#play').onclick = () => { if (!S.buffer) return openSheet('tracks'); S.playing ? pause() : play(S.pausedAt || 0); };
+
+/* ---------- right panel space sharing ---------- */
+function setPanelFocus(panel) {
+  const effectsOpen = panel === 'effects';
+  const effectCard = $('#effectCard'), materialCard = $('#materialCard');
+  effectCard.classList.toggle('expanded', effectsOpen);
+  effectCard.classList.toggle('compact', !effectsOpen);
+  materialCard.classList.toggle('collapsed', effectsOpen);
+  materialCard.classList.toggle('expanded', !effectsOpen);
+  $('#effectFold').textContent = effectsOpen ? '收起' : '展开';
+  $('#effectFold').setAttribute('aria-expanded', String(effectsOpen));
+  $('#materialFold').textContent = effectsOpen ? '展开' : '收起';
+  $('#materialFold').setAttribute('aria-expanded', String(!effectsOpen));
+}
+$('#effectFold').onclick = () => setPanelFocus($('#effectCard').classList.contains('expanded') ? 'material' : 'effects');
+$('#materialFold').onclick = () => setPanelFocus($('#materialCard').classList.contains('expanded') ? 'effects' : 'material');
 
 let exporting = false;
 function drawPhoneExport(out) {
@@ -1203,7 +1407,7 @@ $('#vol').oninput = e => { if (gainNode) gainNode.gain.value = +e.target.value; 
 document.addEventListener('keydown', e => { if (e.code === 'Space' && e.target.tagName !== 'INPUT') { e.preventDefault(); S.playing ? pause() : play(S.pausedAt || 0); } });
 
 /* ---------- photos ---------- */
-const TAGS = ['全部', '横图', '竖图', '本地', '自拍', '半身', '全身', '双人', '户外', '室内', '夜景'];
+const TAGS = ['全部', '横图', '竖图', '本地', '自拍', '半身', '全身', '双人', '多人', '户外', '室内', '夜景'];
 let curTag = '全部', galleryLimit = 24;
 function presetMatches(d) { return curTag === '全部' || d.tags.includes(curTag); }
 function presetButton(d, i) { const b = document.createElement('button'); b.dataset.i = i; b.dataset.tags = d.tags.join(','); const img = new Image(); img.loading = 'lazy'; img.decoding = 'async'; img.src = d.thumb || d.src; img.alt = d.name; b.appendChild(img);
@@ -1220,7 +1424,7 @@ function buildPhotos() { const box = $('#photos'), fl = $('#filters');
   const up = document.createElement('button'); up.className = 'up'; up.textContent = '上传\n照片/视频'; up.style.whiteSpace = 'pre-line'; up.onclick = () => $('#photoFile').click(); box.appendChild(up);
   renderGallery();
   applyFilter(); }
-function applyFilter() { let n = PRESETS.filter(presetMatches).length; document.querySelectorAll('#photos button[data-lib]').forEach(b => { const show = curTag === '全部' || b.dataset.tags.split(',').includes(curTag); b.classList.toggle('hide', !show); if (show) n++; }); $('#photoCount').textContent = (PRESETS[S.photoIdx]?.name || '本地素材') + ' · ' + n + '/' + (PRESETS.length + LIB.photos.length) + ' 个'; }
+function applyFilter() { let n = PRESETS.filter(presetMatches).length; document.querySelectorAll('#photos button[data-lib]').forEach(b => { const show = curTag === '全部' || b.dataset.tags.split(',').includes(curTag); b.classList.toggle('hide', !show); if (show) n++; }); const label = (PRESETS[S.photoIdx]?.name || '本地素材') + ' · ' + n + '/' + (PRESETS.length + LIB.photos.length) + ' 个', el = $('#photoCount'); el.textContent = label; el.title = label; }
 function selectPhoto(i) { const d = PRESETS[i]; document.querySelectorAll('#photos button').forEach(b => b.classList.toggle('on', +b.dataset.i === i)); if (d.isVideo) setVideo(d.src); else { const img = new Image(); img.onload = () => setImage(img); img.src = d.src; } S.photoIdx = i; applyFilter(); }
 $('#photoFile').onchange = async e => { const files = [...e.target.files]; if (!files.length) return; await importFiles(files, 'photo'); const rec = LIB.photos[LIB.photos.length - 1]; if (rec) selectLib(rec); };
 
@@ -1254,7 +1458,7 @@ function addLibItem(rec) {
   if (rec.kind === 'photo') { LIB.photos.push(rec); const box = $('#photos'), b = document.createElement('button'); b.dataset.lib = rec.id; b.dataset.tags = ['本地', rec.orientation || '竖图'].join(','); b.innerHTML = `<img src="${rec.thumb}" alt=""><span class="tag">${rec.isVideo ? '视频' : (rec.orientation || '本地')}</span><div class="n">${rec.name}</div>`; b.onclick = () => selectLib(rec); b.oncontextmenu = e => { e.preventDefault(); if (confirm('从本机素材库移除「' + rec.name + '」？')) { idbDel(rec.id); LIB.photos = LIB.photos.filter(x => x !== rec); b.remove(); applyFilter(); } }; box.insertBefore(b, box.children[1]); applyFilter(); }
   else { LIB.music.push(rec); renderLocalTracks(); }
 }
-function selectLib(rec) { document.querySelectorAll('#photos button').forEach(b => b.classList.toggle('on', b.dataset.lib === rec.id)); const url = URL.createObjectURL(rec.blob); if (rec.isVideo) setVideo(url); else { const img = new Image(); img.onload = () => setImage(img); img.src = url; } S.photoIdx = -1; $('#photoCount').textContent = rec.name + ' · 本地'; }
+function selectLib(rec) { document.querySelectorAll('#photos button').forEach(b => b.classList.toggle('on', b.dataset.lib === rec.id)); const url = URL.createObjectURL(rec.blob); if (rec.isVideo) setVideo(url); else { const img = new Image(); img.onload = () => setImage(img); img.src = url; } S.photoIdx = -1; const label = rec.name + ' · 本地', el = $('#photoCount'); el.textContent = label; el.title = label; }
 function renderLocalTracks() { const box = $('#tracks'); box.querySelectorAll('.local, .lgrp').forEach(x => x.remove()); if (!LIB.music.length) return;
   const g = document.createElement('div'); g.className = 'grp lgrp'; g.textContent = '本机音乐 · ' + LIB.music.length + ' 首（右键移除）'; box.insertBefore(g, box.firstChild);
   let ref = g.nextSibling;
@@ -1303,14 +1507,18 @@ function renderRemoteTracks() { const box = $('#tracks'); box.querySelectorAll('
 
 /* ---------- fit phone ---------- */
 function fitPhone() {
-  const narrow = innerWidth < 1080;
+  // Keep the creative preview and controls side by side on normal desktop
+  // windows. Only true mobile widths fall back to the vertical layout.
+  const narrow = innerWidth < 681;
   document.body.classList.toggle('stack', narrow);
-  const s = narrow ? Math.min(1, (innerWidth - 40) / 390) : clamp((innerHeight - 30) / 844, 0.62, 0.96);
+  const heightFit = (innerHeight - 30) / 844;
+  const widthFit = (innerWidth - 384) / 390;
+  const s = narrow ? Math.min(1, (innerWidth - 40) / 390) : clamp(Math.min(heightFit, widthFit), .62, .96);
   document.documentElement.style.setProperty('--s', s.toFixed(3));
 }
 addEventListener('resize', fitPhone); fitPhone();
 /* ---------- boot ---------- */
-buildFxList(); buildTracks(); buildPhotos(); selectFx('glitch'); selectPhoto(0); drawTimeline(0); frame(); addEventListener('load', async () => { try { await restoreLibrary(); } catch (e) { }
+buildFxList(); buildTracks(); buildPhotos(); selectPhoto(0); selectFx('subjectSplit'); drawTimeline(0); frame(); addEventListener('load', async () => { try { await restoreLibrary(); } catch (e) { }
   const mf = new URLSearchParams(location.search).get('manifest') || window.MFX_MANIFEST; if (mf) await loadManifest(mf);
   const testPool = [...PACK_TRACKS, ...REMOTE_TRACKS, ...LIB.music], pool = testPool.length ? testPool : TRACKS;
   const initialTrack = pool[Math.floor(Math.random() * pool.length)]; if (initialTrack) setTimeout(() => loadTrack(initialTrack), 180);

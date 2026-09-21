@@ -8,13 +8,25 @@ meta = [("车内自拍",["自拍","室内"]),("橙色长裙",["全身","户外"]
         ("海边白T",["半身","户外"]),("鱼眼电话亭",["自拍","户外"]),("沙发午后",["全身","户外"]),("红卫衣镜拍",["半身","室内"]),
         ("地毯俯拍",["半身","室内"]),("健身房",["自拍","室内"]),("条纹衫眼镜",["自拍","户外"]),("卷发白裙",["半身","室内"])]
 
+horizontal_meta = {
+    'h18.jpg': ("多人18", ["横图", "双人", "半身", "户外"]),
+    'h20.jpg': ("多人20", ["横图", "双人", "半身", "室内"]),
+    'h31.jpg': ("多人31", ["横图", "多人", "自拍", "半身", "夜景"]),
+    'h33.jpg': ("多人33", ["横图", "多人", "半身", "室内"]),
+}
+
 here = os.path.dirname(os.path.abspath(__file__))
 os.chdir(here)
 fs = sorted(glob.glob('models/m*.jpg'))
-arr = '[' + ','.join(json.dumps({
+presets = [{
     "name": meta[i][0], "tags": meta[i][1] + ["竖图"],
     "src": "data:image/jpeg;base64," + base64.b64encode(open(f, 'rb').read()).decode()
-}, ensure_ascii=False) for i, f in enumerate(fs)) + ']'
+} for i, f in enumerate(fs)]
+for f in sorted(glob.glob('models/h*.jpg')):
+    name, tags = horizontal_meta[os.path.basename(f)]
+    presets.append({"name": name, "tags": tags,
+                    "src": "data:image/jpeg;base64," + base64.b64encode(open(f, 'rb').read()).decode()})
+arr = json.dumps(presets, ensure_ascii=False)
 
 # Optional real-audio test pack. Keep metadata in music/library.json; the build
 # embeds audio, generated covers and LRC text so the final HTML still works when
@@ -25,12 +37,15 @@ if os.path.exists(music_manifest):
     with open(music_manifest, encoding='utf-8') as fh:
         for rec in json.load(fh):
             item = dict(rec)
+            # Audio is intentionally lazy-loaded. Embedding tracks made the first
+            # HTML response ~30 MB and delayed every visit even before playback.
+            embed = item.pop('embed', False)
             audio_path = os.path.join(here, 'music', item.pop('audio'))
             cover_path = os.path.join(here, 'music', item.pop('cover'))
             lyric_path = os.path.join(here, 'music', item.pop('lyrics'))
             ext = os.path.splitext(audio_path)[1].lower().lstrip('.')
             mime = {'mp3': 'audio/mpeg', 'm4a': 'audio/mp4', 'wav': 'audio/wav', 'ogg': 'audio/ogg'}.get(ext, 'audio/mpeg')
-            item['url'] = 'data:' + mime + ';base64,' + base64.b64encode(open(audio_path, 'rb').read()).decode()
+            item['url'] = ('data:' + mime + ';base64,' + base64.b64encode(open(audio_path, 'rb').read()).decode()) if embed else ('src/music/' + os.path.relpath(audio_path, os.path.join(here, 'music')).replace(os.sep, '/'))
             item['cover'] = 'data:image/jpeg;base64,' + base64.b64encode(open(cover_path, 'rb').read()).decode()
             item['lrc'] = open(lyric_path, encoding='utf-8').read()
             item['kind'] = 'pack'
