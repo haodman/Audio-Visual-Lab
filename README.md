@@ -5,6 +5,7 @@
 - 线上体验：[https://haodman.com/audio-visual-lab/](https://haodman.com/audio-visual-lab/)
 - 源码仓库：[haodman/Audio-Visual-Lab](https://github.com/haodman/Audio-Visual-Lab)
 - 默认分支：`main`
+- 新同事 / Codex 交接：[`handoff/CODEX_START.md`](handoff/CODEX_START.md)
 
 ---
 
