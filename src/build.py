@@ -32,6 +32,8 @@ if os.path.exists(pack_manifest):
         new_presets = json.load(fh)
         new_presets.sort(key=lambda item: 0 if item['name'] == '绿衣街边咖啡' else 1 if item['name'] == '粉衣咖啡正坐' else 2)
         presets = new_presets + presets
+presets.insert(0, {"name": "生日蛋糕 · 蜡烛", "tags": ["竖图", "半身", "室内", "夜景"],
+                   "src": "data:image/png;base64," + base64.b64encode(open('models/mdp/birthday-flash.png', 'rb').read()).decode()})
 arr = json.dumps(presets, ensure_ascii=False)
 
 # Optional real-audio test pack. Keep metadata in music/library.json; the build
@@ -63,7 +65,16 @@ html = open('app.html', encoding='utf-8').read()
 rhythm_puzzle_js = open('rhythm-puzzle.js', encoding='utf-8').read()
 js = open('app.js', encoding='utf-8').read()
 js = js.replace('/*__PACK_TRACKS__*/[]', music_arr)
-html = html.replace('/*__PRESETS__*/[]', arr).replace('<script src="rhythm-puzzle.js"></script>\n<script src="app.js"></script>', '<script>\n' + rhythm_puzzle_js + '\n' + js + '\n</script>')
+html = html.replace('/*__PRESETS__*/[]', arr)
+for module in ['rhythm-puzzle.js', 'mdp/rules.js', 'mdp/clock-renderer.js', 'mdp/light-stickers.js', 'mdp/composition.js', 'mdp/effects.js', 'mdp/matching.js', 'app.js']:
+    source = js if module == 'app.js' else open(module, encoding='utf-8').read()
+    html = html.replace('<script src="' + module + '"></script>', '<script>\n' + source + '\n</script>')
+# Preserve the hand-drawn font when the review is served or shared as one HTML.
+font = base64.b64encode(open('mdp/fonts/GochiHand-Regular.ttf', 'rb').read()).decode()
+html = html.replace("url('src/mdp/fonts/GochiHand-Regular.ttf')", "url('data:font/ttf;base64," + font + "')")
 out = os.path.join(os.path.dirname(here), 'music-fx-lab.html')
 open(out, 'w', encoding='utf-8').write(html)
 print('built', out, round(len(html) / 1e6, 2), 'MB')
+
+# Both public entry points always represent the same source build.
+open(os.path.join(os.path.dirname(here), 'index.html'), 'w', encoding='utf-8').write(html)

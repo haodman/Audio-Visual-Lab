@@ -37,6 +37,7 @@ function setImage(img) {
   S.media = img; S.isVideo = false; S.cache = {}; S.srcKey = (S.srcKey || 0) + 1; S.segRequestedAt = performance.now();
   sctx.clearRect(0, 0, W, H); coverDraw(sctx, img, img.naturalWidth || img.width, img.naturalHeight || img.height);
   $('#storyimg').src = img.src; drawPeek();
+  MDPMatch.changed();
   // All still-image effects share the same MODNet matting capability. Each
   // framing stores its own output, but model/version/edge treatment are one.
   setSeg('MODNet 高清抠像 · 启动中…', 'working');
@@ -162,6 +163,7 @@ async function refineSubjectHQ(mode = S.fx === 'subjectSplit' ? 'split' : 'full'
     if (mode === 'split') { S.cache.splitSub = c; S.cache.splitHQ = true; delete S.cache.splitBounds; }
     else { S.cache.subj = c; S.cache.subjHQ = true; S.cache.subjAI = true; delete S.cache.cont; delete S.cache.subjBounds; }
     setSeg(`MODNet 高清抠像 · ${((performance.now() - started) / 1000).toFixed(1)}s ✓`, 'ok');
+    MDPMatch.maskReady();
   } catch (e) {
     console.warn('HQ matting failed', e); HQ.state = 'fail'; setSeg('高清模型失败 · 切换实时抠像', 'fallback'); setTimeout(refineSubject, 20);
   } finally { HQ.busy = false; const next = HQ.queuedMode; HQ.queuedMode = null; if (next) setTimeout(() => refineSubjectHQ(next), 0); }
@@ -1268,7 +1270,8 @@ const FX = {
     } },
 
 };
-const FX_ORDER = ['hud', 'subjectSplit', 'contourField', 'textWrap', 'punchSymbols', 'rhythmPuzzle', 'bars', 'rain', 'signalPoster', 'glitch', 'scan', 'dots', 'warhol', 'ascii', 'pixelReveal', 'stretchBands'];
+Object.assign(FX, createMDPStickerEffects({S,src,ctx,W,H,R,C,Sel,T}));
+const FX_ORDER = ['mdpSunshine', 'mdpClock', 'hud', 'subjectSplit', 'contourField', 'textWrap', 'punchSymbols', 'rhythmPuzzle', 'bars', 'rain', 'signalPoster', 'glitch', 'scan', 'dots', 'warhol', 'ascii', 'pixelReveal', 'stretchBands'];
 
 const FX_CAPS = {
   signalPoster: ['单图三构图', '自定义文字 / 当前歌词', '扫描线', '重音横带撕裂', '节拍换景'],
@@ -1347,11 +1350,12 @@ $('#tl').addEventListener('click', e => { if (!S.buffer) return; const r = e.cur
 /* =====================================================================
    7. UI
    ===================================================================== */
-function selectFx(id) { S.fx = id; document.querySelectorAll('#fxlist button, #originalCompare button').forEach(b => b.classList.toggle('on', b.dataset.id === id)); $('#fxname').textContent = FX[id].name + ' · ' + FX[id].desc; const caps = FX_CAPS[id] || []; $('#fxhint').textContent = (FX[id].hint || '') + (caps.length ? '\n技术能力：' + caps.join(' · ') : ''); buildParams();
+function selectFx(id, options = {}) { S.fx = id; setEffectGroup(id.startsWith('mdp') ? 'stickers' : 'effects'); MDPMatch.selected(id, options); document.querySelectorAll('#fxlist button, #originalCompare button').forEach(b => b.classList.toggle('on', b.dataset.id === id)); $('#fxname').textContent = FX[id].name + ' · ' + FX[id].desc; const caps = FX_CAPS[id] || []; $('#fxhint').textContent = (FX[id].hint || '') + (caps.length ? '\n技术能力：' + caps.join(' · ') : ''); buildParams();
   if (id === 'subjectSplit') { setSeg(S.isVideo ? '实时视频抠像 · 启动中…' : 'MODNet 高清抠像 · 启动中…', 'working'); setTimeout(() => S.isVideo ? refineSubject() : refineSubjectHQ('split'), 20); }
   else if (!S.isVideo && !S.cache.subjHQ && ['punchSymbols', 'bars', 'stretchBands', 'contourField', 'textWrap'].includes(id)) { setSeg('MODNet 高清抠像 · 启动中…', 'working'); setTimeout(() => refineSubjectHQ('full'), 20); }
 }
-function buildFxList() { const list = $('#fxlist'); list.innerHTML = '';
+function setEffectGroup(group) { S.effectGroup = group; document.querySelectorAll('#fxlist button').forEach(b => b.hidden = b.dataset.id.startsWith('mdp') !== (group === 'stickers')); document.querySelectorAll('#fxtabs button').forEach(b => b.classList.toggle('on', b.dataset.group === group)); }
+function buildFxList() { const tabs=$('#fxtabs'); tabs.replaceChildren(); for (const [group,label] of [['effects','Visual effects'],['stickers','智能动态贴纸']]) { const b=document.createElement('button'); b.className='chip'; b.dataset.group=group; b.textContent=label; b.onclick=()=>{setEffectGroup(group);if(group==='stickers')MDPMatch.start();}; tabs.appendChild(b); } const list = $('#fxlist'); list.innerHTML = '';
   for (const id of ['none', ...FX_ORDER]) { const e = FX[id]; if (!e) continue; const b = document.createElement('button'); b.dataset.id = id;
     b.innerHTML = `<span class="ico">${e.icon}</span>${e.name}`; b.title = e.desc; b.classList.toggle('on', id === S.fx);
     b.onclick = () => selectFx(id); if (id === 'none') { $('#originalCompare').replaceChildren(b); } else list.appendChild(b); }
@@ -1424,8 +1428,8 @@ function buildTracks() { const box = $('#tracks');
   const g = document.createElement('div'); g.className = 'grp'; g.textContent = '内置曲目'; box.appendChild(g);
   for (const tr of TRACKS) { const b = document.createElement('button'); b.dataset.id = tr.id;
     b.innerHTML = `<div class="t">${tr.name}</div><div class="d">${tr.genre} · ${tr.bpm}</div>`; b.onclick = () => { loadTrack(tr); closeSheet(); }; box.appendChild(b); } }
-function openSheet(kind) { if (kind === 'params') buildParams(); $('#sheet').classList.add('on'); $('#sheetTracks').hidden = kind !== 'tracks'; $('#sheetParams').hidden = kind !== 'params';
-  $('#sheetTitle').textContent = kind === 'tracks' ? '选择音乐' : '参数 · ' + FX[S.fx].name; }
+function openSheet(kind) { if (kind === 'params') buildParams(); $('#sheet').classList.add('on'); $('#sheetTracks').hidden = kind !== 'tracks'; $('#sheetParams').hidden = kind !== 'params'; $('#sheetStickers').hidden = kind !== 'stickers';
+  $('#sheetTitle').textContent = kind === 'tracks' ? '选择音乐' : kind === 'stickers' ? 'Sticker matching · rules & test photos' : '参数 · ' + FX[S.fx].name; }
 function closeSheet() { $('#sheet').classList.remove('on'); }
 $('#discBtn').onclick = () => openSheet('tracks');
 $('#paramBtn').onclick = () => openSheet('params');
@@ -1437,7 +1441,7 @@ $('#urlAdd').onclick = () => { const u = $('#urlIn').value.trim(); if (!/^https?
 $('#urlIn').onkeydown = e => { if (e.key === 'Enter') $('#urlAdd').click(); };
 $('#musicUp2').onclick = () => $('#musicFile').click();
 $('#musicDirBtn2').onclick = () => $('#musicDir').click();
-async function loadTrack(tr) { S.trackId = tr.id;
+async function loadTrack(tr) { S.trackId = tr.id; MDPMatch.trackChanged();
   document.querySelectorAll('#tracks button').forEach(b => b.classList.toggle('on', b.dataset.id === tr.id));
   S.track = tr; S.lyrics = parseLRC(tr.lrc || ''); invalidateTextEffect(); buildEffectCopy(); if ($('#sheet').classList.contains('on') && !$('#sheetParams').hidden) buildParams(); $('#nowT').textContent = tr.name; if (S.playing) pause(); S.pausedAt = 0;
   const disc = $('#discBtn'); disc.style.backgroundImage = tr.cover ? `url("${tr.cover}")` : ''; disc.classList.toggle('has-cover', !!tr.cover);
@@ -1447,12 +1451,15 @@ async function loadTrack(tr) { S.trackId = tr.id;
     else if (tr.kind === 'music') { $('#status').textContent = '解码并分析中…'; $('#nowD').textContent = '本地音乐 · 解码分析中…'; if (!trackCache[tr.id]) trackCache[tr.id] = await ac().decodeAudioData(await tr.blob.arrayBuffer()); }
     else { $('#status').textContent = trackCache[tr.id] ? '分析中…' : '首次合成这首曲目（几秒）…'; $('#nowD').textContent = tr.genre + ' · 合成并分析中…'; ac(); if (!trackCache[tr.id]) trackCache[tr.id] = await renderTrack(tr); }
     if (S.trackId !== tr.id) return;
-    await setBuffer(trackCache[tr.id], tr.name, tr); play(0);
+    await setBuffer(trackCache[tr.id], tr.name, tr); if (S.trackId === tr.id) play(0);
   } catch (err) { toast('无法解码这个音频'); $('#status').textContent = '解码失败'; }
 }
 async function setBuffer(buf, name, tr = {}) {
   S.buffer = buf; S.analysis = null; lastBeatIdx = -1; S.lastSection = null;
-  const A = await analyze(buf); S.analysis = A;
+  const key = S.trackId;
+  const A = await analyze(buf); A.mdp = await MDPRules.analyzeAudio(buf);
+  if (S.buffer !== buf || S.trackId !== key) return;
+  S.analysis = A; S.bufferTrackId = key;
   const displayGenre = tr.genre || A.genre, displayBpm = tr.bpm || A.bpm;
   $('#aBpm').textContent = displayBpm; $('#aGenre').textContent = displayGenre; drawTimeline(0);
   $('#nowD').textContent = `${displayGenre} · ${displayBpm} bpm · ${fmtT(A.dur)}`;
@@ -1671,7 +1678,8 @@ function fitPhone() {
 }
 addEventListener('resize', fitPhone); fitPhone();
 /* ---------- boot ---------- */
-buildFxList(); buildTracks(); buildPhotos(); selectPhoto(0); selectFx('subjectSplit'); drawTimeline(0); frame(); addEventListener('load', async () => { try { await restoreLibrary(); } catch (e) { }
+MDPMatch.init({S,src,W,H,selectFx,setImage,openSheet,closeSheet});
+buildFxList(); buildTracks(); buildPhotos(); selectPhoto(Math.max(0,PRESETS.findIndex(p=>p.name===new URLSearchParams(location.search).get('material')))); selectFx(new URLSearchParams(location.search).has('stickers') ? 'mdpClock' : 'subjectSplit', {automatic:true}); drawTimeline(0); frame(); addEventListener('load', async () => { try { await restoreLibrary(); } catch (e) { }
   const mf = new URLSearchParams(location.search).get('manifest') || window.MFX_MANIFEST; if (mf) await loadManifest(mf);
   const testPool = [...PACK_TRACKS, ...REMOTE_TRACKS, ...LIB.music], pool = testPool.length ? testPool : TRACKS;
   const initialTrack = pool[Math.floor(Math.random() * pool.length)]; if (initialTrack) setTimeout(() => loadTrack(initialTrack), 180);

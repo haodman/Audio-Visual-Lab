@@ -6,3 +6,6 @@ __pycache__/
 .idea/
 .vscode/
 
+
+# Local review images are pending the owner's selection.
+review-assets

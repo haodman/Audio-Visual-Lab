@@ -212,3 +212,11 @@ CDN 需要开 CORS。也可以在页面里设 `window.MFX_MANIFEST = '...'`。
 - 内置曲目是首次点击时才合成（1~3 秒），之后缓存
 - 当前浏览器端导出固定为 15 秒；采用 `MediaRecorder` 合成 canvas 与 WebAudio，编码格式由 Chrome 能力决定（MP4 / WebM）
 - 值得继续推的两个方向：① 按曲风自动推荐"效果 × 驱动 × 参数"的预设包；② 多图按小节切换的节奏剪辑（参考组图玩法）
+
+## 9. 智能动态贴纸（smartStickers）
+
+The **智能动态贴纸** group contains **Rotating sunshine** and **Rotating text clock**. Selecting a still photo starts with the clock, then selects sunshine only when an eligible object is prominent enough in the frame. Small background flowers, distant decorations and tiny sun disks are rejected even when recognized. Birthday candles require either a large standalone candle or spatial support from a prominent foreground cake. Umbrella effects, adapters and their runtime are removed.
+
+The clock always fills 95% of frame width and height, ignoring photo composition. Its outline and hand are white with a soft shadow; words can use soft colors, photo accents, white or a manual color. Stronger actual WebAudio onsets with local beat-grid phase correction advance the hand to the exact highlighted word (one beat per custom word by default), settle after 120ms, and hold between events. Timed lyric text and the hand share eight persistent slots and the same beat event. Sunshine retains image-adaptive ink; both effects support custom/timed text. The birthday-cake original stays in Materials; other review photos stay outside git.
+
+Read [`src/mdp/README.md`](src/mdp/README.md) and [`src/mdp/TRIGGER-RULES.md`](src/mdp/TRIGGER-RULES.md). The two sticker styles are one feature, reviewed in one source branch/PR. The source PR does not merge or publish the public website; website synchronization requires separate authorization.
