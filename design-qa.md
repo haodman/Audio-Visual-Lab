@@ -1,12 +1,14 @@
-# Design QA · Single-image punch effect
+# Design QA · Text wrap effect
 
-- PASS: `🔘 单图打孔` appears immediately after `🌀 轮廓声场` without changing the surrounding effect order.
-- PASS: Glyphs are used as canvas masks rather than a flat sticker layer; the primary mask reveals a photo-derived complementary ground.
-- PASS: Secondary masks display offset samples from the same source image and a restrained printed-color layer, matching the collage behavior in the references.
-- PASS: Presets cover stars, weather, music, flowers, geometry, and a mixed set; custom glyph input is available in the shared parameter drawer.
-- PASS: Count, size variation, offset sampling, printed blocks, color logic, pulse, beat replacement, vibration, and audio driver are adjustable.
-- PASS: Playback verification shows symbols changing position/type on musical transients while the underlying image remains stable.
-- PASS: The phone preview remains visible while parameters are edited, and the main effect/material cards stay unchanged.
-- PASS: Latest source build passes JavaScript syntax validation and returns HTTP 200 from the local service.
+- PASS: `🪐 文字环绕` appears after `🌀 轮廓声场` and before `🔘 单图打孔`, without removing or reordering the preceding effects.
+- PASS: The path is regenerated from the shared MODNet subject alpha and follows the outer silhouette rather than a fixed circular overlay.
+- PASS: Individual glyphs rotate to the local path tangent; measured glyph and word advances reserve arc length before drawing, preventing adjacent copy from overlapping.
+- PASS: Playback verification shows continuous contour scrolling plus clearly enlarged focus words on beat/transient events; high-frequency content adds restrained breathing rather than unrelated timer motion.
+- PASS: The enlarged lyric playhead advances forward from the lower-left silhouette, over the head, and down the right side as successive words are sung; custom text advances by beat events instead of remaining in a fixed slot.
+- PASS: Custom TikTok-style copy is the default. Switching to automatic lyrics immediately replaces it with the current timed lyric line; empty LRC cues are ignored, word emphasis uses length-weighted timing with held-note tail room, and a per-song timing offset is adjustable.
+- PASS: Reference pink, image sampling, contrast sampling, and manual color are available. Reference monochrome and original-color background modes are available.
+- PASS: Base size, focus enlargement, path offset, word spacing, speed, pulse, and driver controls respond visibly in the shared right-side drawer while the preview remains unobscured.
+- PASS: Visual checks completed with a close portrait, full-body portrait, and multi-person landscape source. Multi-person images correctly use the group silhouette as one subject outline.
+- PASS: Latest source build passes JavaScript syntax validation and the local page renders the completed interaction.
 
 final result: passed

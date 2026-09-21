@@ -1067,6 +1067,48 @@ function contourInk(p) {
   return '#ffffff';
 }
 
+function wrapTextInk(p) {
+  if (p.colorMode === '手动颜色') return p.col || '#ff4fa3';
+  if (p.colorMode === '图片取色') return splitAccent();
+  if (p.colorMode === '反差取色') { const c = splitAccent(), n = parseInt(c.slice(1), 16), rgb = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(v => Math.round(lerp(255 - v, 255, .14))); return '#' + rgb.map(v => v.toString(16).padStart(2, '0')).join(''); }
+  return '#ff4fa3';
+}
+
+function wrapTokens(raw) {
+  const clean = (raw || '').replace(/[\/|,]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!clean) return ['just', 'another', 'day', 'caught', 'in', 'the', 'moment'];
+  if (/[\u3400-\u9fff\u3040-\u30ff\uac00-\ud7af]/.test(clean)) {
+    return typeof Intl !== 'undefined' && Intl.Segmenter ? [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(clean)].map(x => x.segment).filter(x => x.trim()) : Array.from(clean).filter(x => x.trim());
+  }
+  return clean.split(/\s+/).filter(Boolean);
+}
+
+function buildWrapPath(offset = 28) {
+  const w = 135, h = 240, c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(subject(), 0, 0, w, h);
+  const d = g.getImageData(0, 0, w, h).data, left = new Float32Array(h), right = new Float32Array(h); left.fill(-1); right.fill(-1);
+  let y0 = h, y1 = 0;
+  for (let y = 0; y < h; y++) { let lo = w, hi = -1; for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 78) { lo = Math.min(lo, x); hi = x; }
+    if (hi >= lo) { left[y] = lo; right[y] = hi; y0 = Math.min(y0, y); y1 = Math.max(y1, y); } }
+  if (y1 <= y0) { y0 = 20; y1 = h - 12; for (let y = y0; y <= y1; y++) { const q = (y - y0) / Math.max(1, y1 - y0), half = w * (.19 + q * .18); left[y] = w / 2 - half; right[y] = w / 2 + half; } }
+  for (let y = y0; y <= y1; y++) if (left[y] < 0) { let a = y - 1, b = y + 1; while (a >= y0 && left[a] < 0) a--; while (b <= y1 && left[b] < 0) b++; const q = a >= y0 && b <= y1 ? (y - a) / (b - a) : 0; left[y] = a >= y0 ? (b <= y1 ? lerp(left[a], left[b], q) : left[a]) : left[b]; right[y] = a >= y0 ? (b <= y1 ? lerp(right[a], right[b], q) : right[a]) : right[b]; }
+  const sx = W / w, sy = H / h, step = 3, pts = [];
+  for (let y = y1; y >= y0; y -= step) pts.push({ x: left[y] * sx - offset, y: y * sy + (y < y0 + 8 ? -offset * .55 : 0) });
+  for (let y = y0; y <= y1; y += step) pts.push({ x: right[y] * sx + offset, y: y * sy + (y < y0 + 8 ? -offset * .55 : 0) });
+  pts.push({ x: right[y1] * sx + offset, y: H + 72 }, { x: left[y1] * sx - offset, y: H + 72 });
+  let smooth = pts;
+  for (let pass = 0; pass < 4; pass++) { const out = []; for (let i = 0; i < smooth.length; i++) { const a = smooth[(i - 1 + smooth.length) % smooth.length], b = smooth[i], z = smooth[(i + 1) % smooth.length]; out.push({ x: a.x * .22 + b.x * .56 + z.x * .22, y: a.y * .22 + b.y * .56 + z.y * .22 }); } smooth = out; }
+  const cum = [0]; let total = 0; for (let i = 1; i <= smooth.length; i++) { const a = smooth[i - 1], b = smooth[i % smooth.length]; total += Math.hypot(b.x - a.x, b.y - a.y); cum.push(total); }
+  return { pts: smooth, cum, total };
+}
+
+function wrapPathPoint(path, distance) {
+  const d = ((distance % path.total) + path.total) % path.total, c = path.cum; let lo = 0, hi = c.length - 1;
+  while (lo + 1 < hi) { const m = (lo + hi) >> 1; if (c[m] <= d) lo = m; else hi = m; }
+  const a = path.pts[lo % path.pts.length], b = path.pts[(lo + 1) % path.pts.length], q = (d - c[lo]) / Math.max(.001, c[lo + 1] - c[lo]);
+  return { x: lerp(a.x, b.x, q), y: lerp(a.y, b.y, q), angle: Math.atan2(b.y - a.y, b.x - a.x) };
+}
+
 function initContourGL(s) {
   if (s.glCanvas) return !!s.gl;
   const c = document.createElement('canvas'); c.width = W; c.height = H; s.glCanvas = c;
@@ -1179,6 +1221,33 @@ const FX = {
       if (!s.gl) { ctx.save(); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.filter = 'blur(.65px)'; ctx.drawImage(fc, 0, 0, W, H); ctx.restore(); }
       ctx.drawImage(sub, 0, 0); if (raw) { const maxW = W * .82, base = 66 * p.textSize; ctx.font = contourFont(p.font, base); const tw = Math.max(1, ctx.measureText(raw).width), fs = base * Math.min(1, maxW / tw); ctx.font = contourFont(p.font, fs); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = contourInk(p); ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = Math.max(1, fs * .025); ctx.strokeText(raw, W / 2, cy); ctx.fillText(raw, W / 2, cy); }
       dropFlash(f, p); }
+  },
+
+  textWrap: {
+    name: '文字环绕', icon: '🪐', desc: '文字沿主体外轮廓滚动',
+    hint: '共用 MODNet 主体蒙版生成人物最外轮廓路径。文字按实际字宽占用弧长，逐字贴合曲线且不重叠；鼓点推进滚动并放大当前重点词，高频和旋律控制轻微呼吸。',
+    params: [Sel('copy', '文字来源', ['自定义文字', '自动歌词'], '自定义文字'), T('text', '自定义文字', 'just another day / caught in the moment / let me stay here a little longer'), Sel('font', '字体风格', ['窄体海报', '无衬线粗体', '衬线编辑', '等宽科技'], '窄体海报'), Sel('colorMode', '文字取色', ['参考粉色', '图片取色', '反差取色', '手动颜色'], '参考粉色'), C('col', '手动颜色', '#ff4fa3'), Sel('background', '画面风格', ['参考黑白', '保留原色'], '参考黑白'),
+      R('size', '基础字号', .65, 1.65, .86), R('emphasis', '局部大词', 1.5, 4.8, 3.35), R('offset', '轮廓距离', 8, 72, 30, 1), R('gap', '词间距', 2, 22, 8, 1), R('speed', '滚动速度', .05, 1.5, .5), R('lyricOffset', '歌词校准', -1.5, 1.5, 0, .05), R('pulse', '律动强度', 0, 2, 1.34), D('drv', 'beat', ['beat', 'kick', 'high', 'energy'])],
+    state: { path: null, key: '', offset: 0, pulse: 0, focus: 0, was: 0, lastHit: -9, lastT: null, lyric: '', travel: 0, travelTarget: 0, lyricAbs: -1 },
+    draw(f, p, t) { const s = this.state, dt = clamp(t - (s.lastT == null ? t : s.lastT), 0, .06); s.lastT = t;
+      ctx.save(); if (p.background === '参考黑白') ctx.filter = 'grayscale(1) contrast(1.05)'; ctx.drawImage(src, 0, 0); ctx.restore();
+      const lyricState = p.copy === '自动歌词' ? timedLyricAt(t + (p.lyricOffset || 0)) : null, selected = p.copy === '自动歌词' ? (lyricState?.text || '暂无歌词') : p.text, raw = (selected || '').trim(), tokens = wrapTokens(raw), pathKey = S.srcKey + '|' + Math.round(p.offset) + '|' + !!S.cache.subjHQ;
+      if (s.key !== pathKey || !s.path) { s.key = pathKey; s.path = buildWrapPath(p.offset); }
+      if (lyricState && raw) { s.lyric = raw; s.focus = Math.min(tokens.length - 1, Math.max(0, lyricState.word)); }
+      const hit = Math.max(f[p.drv] || 0, f.kick * .96, f.beat * .8, f.snare * .55), audible = S.playing && (f.energy > .045 || f.bass > .06 || f.high > .05);
+      if (audible && hit > .46 && s.was <= .46 && t - s.lastHit > .18) { s.lastHit = t; s.pulse = Math.max(s.pulse, .94 + hit * .42); if (!lyricState) { s.focus = (s.focus + 1) % Math.max(1, tokens.length); s.travelTarget += 88 + 30 * p.speed; } s.offset += 2.5 + hit * 6.5 * p.speed; }
+      s.was = hit; s.pulse *= Math.pow(.925, dt * 60);
+      if (audible) s.offset += dt * (2.2 + p.speed * 8.5) * (.45 + f.energy * .72 + f.high * .28);
+      const lyricHold = lyricState ? .84 + .16 * Math.sin(Math.PI * lyricState.wordPhase) : 0, emphasisDrive = lyricState ? clamp(lyricHold + s.pulse * .16 * p.pulse, 0, 1.2) : clamp(.78 + s.pulse * .28 * p.pulse, 0, 1.25);
+      const base = 19 + 17 * p.size, focusScale = 1 + (p.emphasis - 1) * emphasisDrive, breathe = 1 + (audible ? Math.sin(t * 3.2) * f.high * .025 * p.pulse : 0), ink = wrapTextInk(p), fontName = p.font || '窄体海报', path = s.path;
+      const makeMetric = (word, scale = 1) => { const fs = base * scale * breathe; ctx.font = contourFont(fontName, fs); const glyphs = typeof Intl !== 'undefined' && Intl.Segmenter ? [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(word)].map(x => x.segment) : Array.from(word); const widths = glyphs.map(ch => Math.max(fs * .22, ctx.measureText(ch).width)); return { glyphs, widths, fs, advance: widths.reduce((a, b) => a + b, 0) + p.gap + fs * .16 }; };
+      const regular = tokens.map(word => makeMetric(word, 1 + clamp(f.high * p.pulse * .045, 0, .07))), cycle = regular.reduce((a, m) => a + m.advance, 0) || 1, focusMetric = makeMetric(tokens[s.focus] || tokens[0], focusScale), focusWidth = focusMetric.widths.reduce((a, b) => a + b, 0), visibleStart = path.total * .035, visibleSpan = path.total * .69;
+      if (lyricState) { const target = lyricState.absoluteWord * (102 + p.speed * 22); if (s.lyricAbs < 0 || target < s.travelTarget - visibleSpan * .5) s.travel = target; s.travelTarget = target; s.lyricAbs = lyricState.absoluteWord; }
+      const follow = 1 - Math.exp(-dt * (lyricState ? 5.6 : 7.2)); s.travel += (s.travelTarget - s.travel) * follow; const focusAt = visibleStart + ((s.travel % visibleSpan) + visibleSpan) % visibleSpan, focusReserve = focusWidth * .62 + p.gap * 1.5, flowOffset = s.offset + s.travel * .34, start = -((flowOffset % cycle) + cycle) % cycle;
+      ctx.save(); ctx.fillStyle = ink; ctx.strokeStyle = 'rgba(0,0,0,.16)'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+      let cursor = start - cycle, lap = -1; while (cursor < path.total + cycle && lap < Math.ceil(path.total / cycle) + 3) { for (let wi = 0; wi < tokens.length; wi++) { const m = regular[wi]; cursor += p.gap * .5; ctx.font = contourFont(fontName, m.fs); ctx.lineWidth = Math.max(.45, m.fs * .018); for (let gi = 0; gi < m.glyphs.length; gi++) { const gw = m.widths[gi], at = cursor + gw * .5, arcGap = Math.min(Math.abs(at - focusAt), path.total - Math.abs(at - focusAt)); if (at >= -80 && at <= path.total + 80 && arcGap > focusReserve) { const q = wrapPathPoint(path, at); let angle = q.angle; if (Math.cos(angle) < -.15) angle += Math.PI; ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(angle); ctx.strokeText(m.glyphs[gi], 0, 0); ctx.fillText(m.glyphs[gi], 0, 0); ctx.restore(); } cursor += gw; } cursor += p.gap * .5 + m.fs * .16; } lap++; }
+      let focusCursor = focusAt - focusWidth * .5; ctx.font = contourFont(fontName, focusMetric.fs); ctx.lineWidth = Math.max(.6, focusMetric.fs * .018); const focusMid = wrapPathPoint(path, focusAt), safe = focusMetric.fs * .58, focusShiftX = Math.max(0, safe - focusMid.x) - Math.max(0, focusMid.x - (W - safe)); for (let gi = 0; gi < focusMetric.glyphs.length; gi++) { const gw = focusMetric.widths[gi], q = wrapPathPoint(path, focusCursor + gw * .5); let angle = q.angle; if (Math.cos(angle) < -.15) angle += Math.PI; ctx.save(); ctx.translate(q.x + focusShiftX, q.y); ctx.rotate(angle); ctx.strokeText(focusMetric.glyphs[gi], 0, 0); ctx.fillText(focusMetric.glyphs[gi], 0, 0); ctx.restore(); focusCursor += gw; }
+      ctx.restore(); dropFlash(f, p); }
   },
 
   punchSymbols: {
@@ -1484,14 +1553,14 @@ const FX = {
       ctx.globalAlpha = 1; dropFlash(f, p); } },
 
 };
-const FX_ORDER = ['none', 'hud', 'subjectSplit', 'glitch', 'contourField', 'punchSymbols', 'scan', 'dots', 'mosaic', 'warhol', 'ascii', 'rain', 'bars', 'pixelReveal', 'stretchBands'];
+const FX_ORDER = ['none', 'hud', 'subjectSplit', 'glitch', 'contourField', 'textWrap', 'punchSymbols', 'scan', 'dots', 'mosaic', 'warhol', 'ascii', 'rain', 'bars', 'pixelReveal', 'stretchBands'];
 
 const FX_CAPS = {
   none: ['9:16 素材适配'], glitch: ['分块采样', 'RGB 通道分离', 'Kick/Hi-hat 瞬态检测'], scan: ['亮度降采样', '小节对齐', '高频/能量驱动'],
   dots: ['亮度阈值', 'LED 点阵量化', '高频/节拍驱动'], mosaic: ['画面量化', '低频脉冲', '惯性回弹'], warhol: ['多格重排', '色相变换', '重拍触发'],
   ascii: ['亮度字符映射', '能量密度驱动'], rain: ['程序化文字粒子', 'Hi-hat/高频驱动'], bars: ['实时 FFT', '频带映射', '包络平滑'],
   hud: ['短标记自动分组', '曲线点阵网格', '流动高亮点', '双层湍流场', 'CH/QUERY 数据标注', '音乐位移波'], pixelReveal: ['亮度/主体目标', '像素重采样', '扫描带', '粒子系统'],
-  contourField: ['MODNet 主体蒙版', '蒙版膨胀/差集', '文字轮廓合并', '低频/节拍扩散'], punchSymbols: ['字形蒙版', '照片互补色推导', '同图错位采样', '节拍触发替换'], stretchBands: ['局部色彩采样', '横向像素延展', '主体分割保护', '节拍状态机'],
+  contourField: ['MODNet 主体蒙版', '蒙版膨胀/差集', '文字轮廓合并', '低频/节拍扩散'], textWrap: ['MODNet 主体外轮廓', '曲线字形排版', '弧长防重叠', '歌词时间轴', '鼓点重点词推进'], punchSymbols: ['字形蒙版', '照片互补色推导', '同图错位采样', '节拍触发替换'], stretchBands: ['局部色彩采样', '横向像素延展', '主体分割保护', '节拍状态机'],
   subjectSplit: ['实时主体分割', '前景/背景分层', '图片取色', '轮廓文字填充', '高低频/节拍驱动']
 };
 
@@ -1564,7 +1633,7 @@ $('#tl').addEventListener('click', e => { if (!S.buffer) return; const r = e.cur
    ===================================================================== */
 function selectFx(id) { S.fx = id; document.querySelectorAll('#fxlist button').forEach(b => b.classList.toggle('on', b.dataset.id === id)); $('#fxname').textContent = FX[id].name + ' · ' + FX[id].desc; const caps = FX_CAPS[id] || []; $('#fxhint').textContent = (FX[id].hint || '') + (caps.length ? '\n技术能力：' + caps.join(' · ') : ''); buildParams();
   if (id === 'subjectSplit') { setSeg(S.isVideo ? '实时视频抠像 · 启动中…' : 'MODNet 高清抠像 · 启动中…', 'working'); setTimeout(() => S.isVideo ? refineSubject() : refineSubjectHQ('split'), 20); }
-  else if (!S.isVideo && ['pixelReveal', 'stretchBands', 'contourField'].includes(id)) { setSeg('MODNet 高清抠像 · 启动中…', 'working'); setTimeout(() => refineSubjectHQ('full'), 20); }
+  else if (!S.isVideo && ['pixelReveal', 'stretchBands', 'contourField', 'textWrap'].includes(id)) { setSeg('MODNet 高清抠像 · 启动中…', 'working'); setTimeout(() => refineSubjectHQ('full'), 20); }
 }
 function buildFxList() { const list = $('#fxlist'); list.innerHTML = '';
   for (const id of FX_ORDER) { const e = FX[id]; if (!e) continue; const b = document.createElement('button'); b.dataset.id = id;
@@ -1590,13 +1659,26 @@ const fmt = (v, step) => step >= 1 ? String(Math.round(v)) : v.toFixed(2);
 
 /* ---------- tracks ---------- */
 const trackCache = {};
-function parseLRC(raw = '') { const out = []; for (const line of raw.split(/\r?\n/)) { const m = line.match(/^\[(\d+):(\d+(?:\.\d+)?)\](.*)$/); if (m) out.push({ t: +m[1] * 60 + +m[2], text: m[3].trim() }); } return out.sort((a, b) => a.t - b.t); }
+function parseLRC(raw = '') { if (/MDP timed cue placeholder/i.test(raw)) return []; const out = []; for (const line of raw.split(/\r?\n/)) { const m = line.match(/^\[(\d+):(\d+(?:\.\d+)?)\](.*)$/), text = m?.[3]?.trim(); if (m && text) out.push({ t: +m[1] * 60 + +m[2], text }); } return out.sort((a, b) => a.t - b.t); }
 function lyricAt(t = songTime()) { let hit = null; for (const q of S.lyrics) { if (q.t > t) break; hit = q; } return hit ? hit.text : ''; }
 function activeLyricAt(t = songTime()) { return lyricAt(t) || S.lyrics[0]?.text || ''; }
+function timedLyricAt(t = songTime()) {
+  if (!S.lyrics.length) return null;
+  let index = 0; for (let i = 0; i < S.lyrics.length; i++) { if (S.lyrics[i].t > t) break; index = i; }
+  const line = S.lyrics[index], next = S.lyrics[index + 1], text = line?.text || '', words = wrapTokens(text), duration = Math.max(.8, (next?.t ?? (line.t + 3.4)) - line.t), rawProgress = clamp((t - line.t) / duration, 0, .9999);
+  // LRC normally provides line-level rather than word-level timestamps. Weight
+  // each word by its spoken length and reserve the final 9% for held notes and
+  // breathing, which tracks real singing more closely than equal subdivisions.
+  const progress = clamp((rawProgress - .015) / .895, 0, .9999), weights = words.map(w => .68 + Math.min(2.15, Array.from(w.replace(/[^\p{L}\p{N}]/gu, '')).length * .19) + (/[,.!?;:]$/.test(w) ? .22 : 0)), total = weights.reduce((a, b) => a + b, 0) || 1, target = progress * total; let word = 0, before = 0;
+  for (let i = 0; i < weights.length; i++) { if (target < before + weights[i]) { word = i; break; } before += weights[i]; word = i; }
+  const wordPhase = clamp((target - before) / Math.max(.001, weights[word]), 0, 1); let priorWords = 0; for (let i = 0; i < index; i++) priorWords += wrapTokens(S.lyrics[i].text).length;
+  return { text, word, wordPhase, progress: rawProgress, absoluteWord: priorWords + word + wordPhase };
+}
 function invalidateTextEffect(id = S.fx) { const state = FX[id]?.state; if (!state) return;
   if (id === 'hud') { state.key = ''; state.nodes = []; state.edges = []; }
   else if (id === 'subjectSplit') { state.insideKey = ''; state.inside = []; state.drops = []; state.word = 0; }
   else if (id === 'contourField') { state.key = ''; state.mask = null; state.field = null; state.fieldImage = null; }
+  else if (id === 'textWrap') { state.key = ''; state.path = null; state.lyric = ''; state.focus = 0; state.travel = 0; state.travelTarget = 0; state.lyricAbs = -1; }
 }
 window.MFX_MUSIC = { currentTrack: () => S.track, lyricAt, lyrics: () => S.lyrics };
 function buildTracks() { const box = $('#tracks');

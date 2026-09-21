@@ -23,16 +23,17 @@ Audio Visual Lab is a browser-based workbench for prototyping image/video effect
 3. Upper/Lower Split
 4. Fragment Displacement
 5. Contour Sound Field
-6. Single-image Punch
-7. Pixel Scan
-8. LED Matrix
-9. Mosaic Pulse
-10. Pop-art Grid
-11. ASCII
-12. Character Rain
-13. Spectrum Bars
-14. Local Pixel Reveal
-15. Local Horizontal Stretch
+6. Text Wrap
+7. Single-image Punch
+8. Pixel Scan
+9. LED Matrix
+10. Mosaic Pulse
+11. Pop-art Grid
+12. ASCII
+13. Character Rain
+14. Spectrum Bars
+15. Local Pixel Reveal
+16. Local Horizontal Stretch
 
 The Chinese UI labels are the source of truth: `原图`, `风迹`, `上下分屏`, `碎块位移`, `轮廓声场`, `单图打孔`, and the remaining labels in `FX_ORDER`.
 
@@ -61,6 +62,13 @@ The Chinese UI labels are the source of truth: `原图`, `风迹`, `上下分屏
 - Some glyphs reveal offset samples from the same source image; a minority use printed color blocks.
 - Includes star, weather, music, flower, geometric, and mixed presets plus custom symbols.
 - Beat transients replace a subset of glyphs and cause a brief scale/position response.
+
+### Text Wrap
+
+- Uses the shared MODNet alpha to derive and smooth a closed path around the subject's outer silhouette.
+- Lays out each glyph along the local curve tangent using measured arc-length advances, so enlarged focus words push neighboring text instead of overlapping it.
+- Default custom copy is TikTok-style everyday English; timed lyrics are available from the same source selector used by the other text effects.
+- Reference pink is the default, with image, contrast, and manual color modes. Beat/transient events advance the text and enlarge the active word; high-frequency energy adds restrained breathing.
 
 ## Media and text
 
