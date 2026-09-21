@@ -121,8 +121,7 @@ def main():
     COVER_DIR.mkdir(parents=True, exist_ok=True)
     LYRIC_DIR.mkdir(parents=True, exist_ok=True)
     library_path = MUSIC / "library.json"
-    library = [item for item in json.loads(library_path.read_text(encoding="utf-8"))
-               if not item.get("id", "").startswith("jw-")]
+    library = json.loads(library_path.read_text(encoding="utf-8"))
     by_id = {item["id"]: item for item in library}
 
     for source_mp3 in sorted(SOURCE.glob("*.mp3")):
@@ -134,6 +133,9 @@ def main():
             title = str(tags.get("title") or source_mp3.stem.split(" - ", 1)[-1]).strip()
             artist = str(tags.get("artist") or source_mp3.stem.split(" - ", 1)[0]).replace("/", ", ").strip()
             track_id = "netease-" + slug(f"{artist}-{title}")
+            if track_id in by_id:
+                print(f"skipped existing {artist} — {title}")
+                continue
             audio_name = slug(f"{artist}-{title}") + ".mp3"
             audio_path = AUDIO_DIR / audio_name
             subprocess.run([

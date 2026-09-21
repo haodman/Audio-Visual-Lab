@@ -18,6 +18,10 @@ Audio Visual Lab is a browser-based workbench for prototyping image/video effect
 
 ## Active effect order
 
+Local addition: 失真海报 (`signalPoster`) follows 图形镂空. Single-photo typographic poster, custom/timed copy, three beat-switched layouts, scanlines and transient horizontal tears. No multi-image selection or deployment yet.
+
+Local revision (2026-09-21): 文字随风、上下分屏、轮廓波纹、文字环绕、图形镂空、碎片错位、像素扫描、发光点阵、马赛克、波普四格、字符画、字符雨、音乐频谱、粒子显影、横向拉丝. 原图 is a separate comparison control. The first four renderers are unchanged; the remaining eleven have a new editorial prototype implementation. This revision is not deployed; the list below describes the older published naming.
+
 1. Original
 2. Wind Trace
 3. Upper/Lower Split

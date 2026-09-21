@@ -224,6 +224,8 @@ details.adv>summary:hover{color:var(--ink)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 .effect-copy{margin-top:7px;display:flex;align-items:center;gap:7px}
 .effect-copy[hidden]{display:none}
+#originalCompare button{font-size:10px;color:var(--ink2);padding:2px 7px;border:1px solid var(--hair);border-radius:99px;background:transparent}
+#originalCompare button.on{background:#f4f3ef;color:#171817}
 .copy-source{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--ink2);flex:none}
 .copy-source>span{margin-right:auto}
 .effect-copy input{box-sizing:border-box;flex:1;min-width:0;height:30px;border:1px solid rgba(255,255,255,.12);border-radius:8px;background:rgba(0,0,0,.18);color:var(--ink);padding:5px 8px;font:inherit;font-size:11px}
@@ -304,6 +306,7 @@ details.adv>summary:hover{color:var(--ink)}
         <div class="fx" id="fxlist"></div>
         <div class="effect-copy" id="effectCopy" hidden></div>
         <div class="switches">
+          <span id="originalCompare"></span>
           <label class="toggle"><input type="checkbox" id="autoDrop" checked> Drop 加强</label>
           <label class="toggle"><input type="checkbox" id="showMask"> 看抠像</label><input type="checkbox" id="autoSwitch" hidden>
         </div>
@@ -338,6 +341,7 @@ details.adv>summary:hover{color:var(--ink)}
 <script>
 const PRESETS = /*__PRESETS__*/[];
 </script>
+<script src="rhythm-puzzle.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
