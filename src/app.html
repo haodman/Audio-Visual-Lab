@@ -7,6 +7,32 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
+@font-face{font-family:Silkscreen;src:url('effects/color-bars/fonts/Silkscreen-Regular.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap}
+.p-colorPhoto[hidden]{display:none}
+.color-photo-control{grid-column:2/4;display:grid;grid-template-columns:38px minmax(0,1fr);gap:5px 9px;align-items:center;min-width:0}
+.color-photo-control img{width:38px;height:44px;object-fit:cover;grid-row:1/3;border-radius:4px}
+.p .color-photo-control{grid-column:1/-1;grid-template-columns:46px minmax(0,1fr)}
+.p .color-photo-control select,.p .color-photo-control input[type=range],.p .color-replace{grid-column:2}
+.p .color-photo-control img{height:60px;width:46px;grid-row:1/4}
+.color-photo-control select,.color-photo-control input{min-width:0;width:100%}
+.color-replace{justify-self:start;font-size:9px}
+.p-colorRules{grid-column:1/-1}
+.color-rules{grid-column:1/-1;font-size:11px;color:var(--ink2);line-height:1.8}
+.color-count{display:flex;gap:5px}
+.p-colorCount .color-count{grid-column:1/-1}
+#colorBarPhotos{flex:none;margin-bottom:8px}
+#colorBarPhotos[hidden]{display:none}
+.color-picker-top{display:flex;gap:10px;align-items:center;margin-bottom:6px;font-size:10px;color:var(--ink2)}
+.color-photo-slots{display:flex;gap:6px}
+.color-photo-slot{display:flex;gap:7px;align-items:center;border:1px solid var(--hair2);border-radius:8px;min-width:0;flex:1;padding:4px;text-align:left;font-size:10px;color:var(--ink2)}
+.color-photo-slot.on{border-color:var(--ink);color:var(--ink);background:rgba(255,255,255,.07)}
+.color-photo-slot img{width:29px;height:38px;border-radius:4px;object-fit:cover;flex:none}
+.color-photo-slot span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.color-picker-tip{font-size:10px;color:var(--ink2);margin-top:5px}
+body.color-bars-active .material-card>.body{overflow-y:auto;display:block}
+body.color-bars-active .material-card .photos{overflow:visible;min-height:92px;max-height:none}
+.color-slot-badge{position:absolute;right:3px;top:3px;background:#fff;color:#111;border-radius:4px;font-size:10px;padding:0 4px;font-weight:700}
+
 :root{--s:1;
   --bg:#090b0b;--card:#151618;--card2:#191a1d;--sunk:#0f1012;--radius:21px;
   --hair:rgba(255,255,255,.065);--hair2:rgba(255,255,255,.13);
@@ -316,6 +342,7 @@ details.adv>summary:hover{color:var(--ink)}
     <section class="card grow material-card expanded" id="materialCard">
       <header><h2>素材</h2><span class="meta" id="photoCount"></span><span class="meta seg-status" id="segState" data-state="idle">主体识别待机</span><button class="act" id="photoDirBtn" style="margin-left:8px">文件夹</button><button class="act panel-fold" id="materialFold" aria-expanded="true">收起</button></header>
       <div class="body">
+        <div id="colorBarPhotos" hidden></div>
         <div class="filters" id="filters"></div>
         <div class="photos" id="photos"></div>
         <input type="file" id="photoFile" accept="image/*,video/*" multiple hidden><input type="file" id="photoDir" webkitdirectory multiple hidden>
@@ -340,8 +367,10 @@ details.adv>summary:hover{color:var(--ink)}
 
 <script>
 const PRESETS = /*__PRESETS__*/[];
+const COLOR_BAR_SAMPLES = /*__COLOR_BAR_SAMPLES__*/[];
 </script>
 <script src="rhythm-puzzle.js"></script>
+<script src="effects/color-bars/effect.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
