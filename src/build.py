@@ -60,10 +60,12 @@ if os.path.exists(music_manifest):
 music_arr = json.dumps(music_library, ensure_ascii=False)
 
 html = open('app.html', encoding='utf-8').read()
+single_punch_js = open('effects/single-punch/effect.js', encoding='utf-8').read()
 rhythm_puzzle_js = open('rhythm-puzzle.js', encoding='utf-8').read()
 js = open('app.js', encoding='utf-8').read()
 js = js.replace('/*__PACK_TRACKS__*/[]', music_arr)
-html = html.replace('/*__PRESETS__*/[]', arr).replace('<script src="rhythm-puzzle.js"></script>\n<script src="app.js"></script>', '<script>\n' + rhythm_puzzle_js + '\n' + js + '\n</script>')
+html = html.replace('/*__PRESETS__*/[]', arr).replace('<script src="effects/single-punch/effect.js"></script>\n<script src="rhythm-puzzle.js"></script>\n<script src="app.js"></script>', '<script>\n' + single_punch_js + '\n' + rhythm_puzzle_js + '\n' + js + '\n</script>')
 out = os.path.join(os.path.dirname(here), 'music-fx-lab.html')
 open(out, 'w', encoding='utf-8').write(html)
+open(os.path.join(os.path.dirname(here), 'index.html'), 'w', encoding='utf-8').write(html)
 print('built', out, round(len(html) / 1e6, 2), 'MB')

@@ -1268,9 +1268,12 @@ const FX = {
     } },
 
 };
-const FX_ORDER = ['hud', 'subjectSplit', 'contourField', 'textWrap', 'punchSymbols', 'rhythmPuzzle', 'bars', 'rain', 'signalPoster', 'glitch', 'scan', 'dots', 'warhol', 'ascii', 'pixelReveal', 'stretchBands'];
+FX.singlePunch = createSinglePunchEffect({W, H, src, ctx, S, R, Sel, songTime});
+
+const FX_ORDER = ['hud', 'subjectSplit', 'contourField', 'textWrap', 'punchSymbols', 'singlePunch', 'rhythmPuzzle', 'bars', 'rain', 'signalPoster', 'glitch', 'scan', 'dots', 'warhol', 'ascii', 'pixelReveal', 'stretchBands'];
 
 const FX_CAPS = {
+  singlePunch: ['只用正方形', '照片取色 / 独立撞色', '每拍一个', '铺满后每两拍重排', '音频起音对齐'],
   signalPoster: ['单图三构图', '自定义文字 / 当前歌词', '扫描线', '重音横带撕裂', '节拍换景'],
   none: ['9:16 素材适配'], glitch: ['方块采样错位', 'RGB 通道分离', 'Kick / Hi-hat 瞬态检测'], scan: ['照片降采样', '节拍推进', '局部拉伸扫描'],
   dots: ['原色灯珠', '亮度尺寸映射', '节拍光浪'], mosaic: ['大块取景', '重音错位回弹', '照片自适应取色'], warhol: ['四种分镜布局', '等比例特写', '四拍换景'],
@@ -1347,9 +1350,9 @@ $('#tl').addEventListener('click', e => { if (!S.buffer) return; const r = e.cur
 /* =====================================================================
    7. UI
    ===================================================================== */
-function selectFx(id) { S.fx = id; document.querySelectorAll('#fxlist button, #originalCompare button').forEach(b => b.classList.toggle('on', b.dataset.id === id)); $('#fxname').textContent = FX[id].name + ' · ' + FX[id].desc; const caps = FX_CAPS[id] || []; $('#fxhint').textContent = (FX[id].hint || '') + (caps.length ? '\n技术能力：' + caps.join(' · ') : ''); buildParams();
+function selectFx(id) { const changed = S.fx !== id; S.fx = id; if (changed) FX[id].enter?.(); document.querySelectorAll('#fxlist button, #originalCompare button').forEach(b => b.classList.toggle('on', b.dataset.id === id)); $('#fxname').textContent = FX[id].name + ' · ' + FX[id].desc; const caps = FX_CAPS[id] || []; $('#fxhint').textContent = (FX[id].hint || '') + (caps.length ? '\n技术能力：' + caps.join(' · ') : ''); buildParams();
   if (id === 'subjectSplit') { setSeg(S.isVideo ? '实时视频抠像 · 启动中…' : 'MODNet 高清抠像 · 启动中…', 'working'); setTimeout(() => S.isVideo ? refineSubject() : refineSubjectHQ('split'), 20); }
-  else if (!S.isVideo && !S.cache.subjHQ && ['punchSymbols', 'bars', 'stretchBands', 'contourField', 'textWrap'].includes(id)) { setSeg('MODNet 高清抠像 · 启动中…', 'working'); setTimeout(() => refineSubjectHQ('full'), 20); }
+  else if (!S.isVideo && !S.cache.subjHQ && ['punchSymbols', 'singlePunch', 'bars', 'stretchBands', 'contourField', 'textWrap'].includes(id)) { setSeg('MODNet 高清抠像 · 启动中…', 'working'); setTimeout(() => refineSubjectHQ('full'), 20); }
 }
 function buildFxList() { const list = $('#fxlist'); list.innerHTML = '';
   for (const id of ['none', ...FX_ORDER]) { const e = FX[id]; if (!e) continue; const b = document.createElement('button'); b.dataset.id = id;
@@ -1388,7 +1391,9 @@ function buildParams() {
     else if (d.type === 'color') { const inp = document.createElement('input'); inp.type = 'color'; inp.value = vals[d.key]; inp.oninput = () => vals[d.key] = inp.value; row.appendChild(inp); row.appendChild(document.createElement('div')); }
     else if (d.type === 'select') { const sel = document.createElement('select'); d.opts.forEach(o => { const op = document.createElement('option'); op.textContent = o; op.value = o; op.selected = vals[d.key] === o; sel.appendChild(op); }); sel.onchange = () => { vals[d.key] = sel.value; if (d.key === 'copy') invalidateTextEffect(S.fx); }; row.appendChild(sel); row.appendChild(document.createElement('div')); }
     else if (d.type === 'driver') { const wrap = document.createElement('div'); wrap.className = 'drv'; (d.only || Object.keys(DRIVERS)).forEach(k => { const c = document.createElement('button'); c.className = 'chip' + (vals[d.key] === k ? ' on' : ''); c.textContent = DRIVERS[k]; c.onclick = () => { vals[d.key] = k; wrap.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === c)); }; wrap.appendChild(c); }); row.appendChild(wrap); }
+    if (S.fx === 'singlePunch') { const control = row.querySelector('input, select'); if (control) control.setAttribute('aria-label', d.label); }
     box.appendChild(row); }
+  FX[S.fx].buildPanel?.(box);
   const reset = document.createElement('button'); reset.className = 'chip param-reset'; reset.textContent = '恢复默认参数'; reset.onclick = () => { defs.forEach(d => vals[d.key] = d.def); buildParams(); }; box.appendChild(reset);
 }
 const fmt = (v, step) => step >= 1 ? String(Math.round(v)) : v.toFixed(2);
@@ -1671,7 +1676,9 @@ function fitPhone() {
 }
 addEventListener('resize', fitPhone); fitPhone();
 /* ---------- boot ---------- */
-buildFxList(); buildTracks(); buildPhotos(); selectPhoto(0); selectFx('subjectSplit'); drawTimeline(0); frame(); addEventListener('load', async () => { try { await restoreLibrary(); } catch (e) { }
+const entryQuery = new URLSearchParams(location.search);
+const entryPhoto = PRESETS.findIndex(photo => photo.name === entryQuery.get('photo'));
+buildFxList(); buildTracks(); buildPhotos(); selectPhoto(entryPhoto >= 0 ? entryPhoto : 0); selectFx(FX[entryQuery.get('effect')] ? entryQuery.get('effect') : 'subjectSplit'); drawTimeline(0); frame(); addEventListener('load', async () => { try { await restoreLibrary(); } catch (e) { }
   const mf = new URLSearchParams(location.search).get('manifest') || window.MFX_MANIFEST; if (mf) await loadManifest(mf);
   const testPool = [...PACK_TRACKS, ...REMOTE_TRACKS, ...LIB.music], pool = testPool.length ? testPool : TRACKS;
   const initialTrack = pool[Math.floor(Math.random() * pool.length)]; if (initialTrack) setTimeout(() => loadTrack(initialTrack), 180);
