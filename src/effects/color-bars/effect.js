@@ -64,7 +64,9 @@ function palette(image,crop){
   }
   function geometry(p) {
     const count = clamp(Math.round(p.count), 1, 3), width = Math.round(W * clamp(p.width, .44, .68));
-    return { count, x: Math.round((W - width) / 2), y: Math.round(H * .045), w: width, h: Math.round(H * .91) };
+    // Single photos use a shorter, centered portrait; multi-photo stacks keep their height.
+    const height = Math.round(H * (count === 1 ? .72 : .91));
+    return { count, x: Math.round((W - width) / 2), y: Math.round((H - height) / 2), w: width, h: height };
   }
   function buildScene(p) {
     const g = geometry(p), key = [p.count, p.width, p.photo0, p.photo1, p.photo2, p.crop0, p.crop1, p.crop2].join('|');
@@ -183,11 +185,17 @@ function palette(image,crop){
       ctx.fillText(word, x, y); ctx.restore();
       state.textBounds.push({ word, x, y, width, ascent, descent, home, lift, lane: bar.lane });
     }
+    // Match the preview frame's visible corner radius, including in canvas exports.
+    // Clip the whole column once so internal photo seams remain continuous.
+    const frameRadius = parseFloat(getComputedStyle(cv.parentElement).borderTopLeftRadius) || 21;
+    const radius = frameRadius * W / (cv.clientWidth || 315);
+    ctx.save(); ctx.beginPath(); ctx.roundRect(g.x, g.y, g.w, g.h, radius); ctx.clip();
     // Original photographs cover inner platform edges, matching the MDP layering.
     for (const photo of scene.photos) {
       if (photo.image) ctx.drawImage(photo.image, ...photo.crop, photo.x, photo.y, photo.w, photo.h);
       else { ctx.fillStyle = '#dbdcd4'; ctx.fillRect(photo.x, photo.y, photo.w, photo.h); }
     }
+    ctx.restore();
   }
   function setCount(count, vals) {
     vals.count = clamp(count, 1, 3); state.slot = Math.min(state.slot || 0, vals.count - 1);
@@ -283,7 +291,7 @@ function palette(image,crop){
   }
   return {
     name: '交错色条', icon: '▰', desc: '照片取色 · 向上弹字',
-    hint: '选择 1–3 张照片，上下紧贴。用 / 或空格分开短词；长词会分成短段。每拍同时伸出 1–3 条，重音更丰富，左右交替；文字向上跳起再回到原位。拖动每张照片下方滑杆调整裁切。',
+    hint: '选择 1–3 张照片；单图居中留白，多图上下紧贴，整列外轮廓为圆角。用 / 或空格分开短词；长词会分成短段。每拍同时伸出 1–3 条，重音更丰富，左右交替；文字向上跳起再回到原位。拖动每张照片下方滑杆调整裁切。',
     params: [{ key: 'count', label: '照片数量', type: 'colorCount', def: 3 },
       { key: 'photo0', label: '照片 1', type: 'colorPhoto', def: 'sample:0' },
       { key: 'photo1', label: '照片 2', type: 'colorPhoto', def: 'sample:1' },
