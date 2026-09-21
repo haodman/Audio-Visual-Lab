@@ -2,11 +2,15 @@
 
 一个纯前端的原型：用音频特征（BPM / 节拍 / 段落 / Drop / Kick / Snare / Hi-hat / 三段能量）实时驱动画面上的程序化动效，用来快速验证「音乐 × AI 视效」玩法的差异化和可玩性。
 
+- 线上体验：[https://haodman.com/audio-visual-lab/](https://haodman.com/audio-visual-lab/)
+- 源码仓库：[haodman/Audio-Visual-Lab](https://github.com/haodman/Audio-Visual-Lab)
+- 默认分支：`main`
+
 ---
 
 ## 1. 怎么跑
 
-`music-fx-lab.html` 是**单文件、零依赖、零构建**的完整程序。双击用 Chrome 打开就能跑，也可以直接扔到任意静态服务器（OSS / S3 / Vercel / Nginx）上。当前构建会内嵌 6 首真实测试音乐，因此文件大小约 29 MB。
+`music-fx-lab.html` 是构建后的完整程序，双击或通过静态服务器都可以运行。图片封面会内嵌，音频保留为 `src/music/**/*.mp3` 按需加载，避免首页一次下载几十 MB。
 
 需要联网的主要是字体与浏览器端 AI 模型，断网会自动降级、不会崩：
 - Google Fonts（Manrope）→ 断网回落系统字体
@@ -24,13 +28,71 @@ src/models/*.jpg  # 20 张预置素材（540×960 裁切好的 9:16）
 src/music/       # 真实测试音乐、波形封面、LRC 和 library.json
 ```
 
-改完执行 `python3 src/build.py`，产出 `music-fx-lab.html`。
+改完执行 `python3 src/build.py`，产出 `music-fx-lab.html`。提交代码时请同时提交构建后的 HTML，否则别人拉取仓库后会看到旧版。
+
+### 本地启动
+
+```bash
+git clone https://github.com/haodman/Audio-Visual-Lab.git
+cd Audio-Visual-Lab
+python3 -m http.server 8765
+```
+
+打开 [http://127.0.0.1:8765/music-fx-lab.html](http://127.0.0.1:8765/music-fx-lab.html)。不建议用 `file://` 直接调试，因为音频、模型和文件夹权限在不同浏览器里可能受限。
+
+### 修改后自检
+
+```bash
+node --check src/app.js
+python3 src/build.py
+git diff --check
+```
+
+然后在 Chrome 里至少验证：页面刷新、切换歌曲、播放/暂停、切换效果、打开参数抽屉、选择素材和导出 15 秒视频。
+
+---
+
+## 2. 团队协作与推送
+
+可以由多人继续维护。该仓库目前是 **Private**，管理员需要先在 GitHub 仓库的 `Settings → Collaborators and teams` 中邀请同事。
+
+- 只需查看：授予 Read。
+- 需要建分支、推送和提 PR：授予 Write。
+- 不建议所有人直接推送 `main`；一个需求使用一个分支和一个 Pull Request。
+
+推荐流程：
+
+```bash
+git pull --rebase origin main
+git switch -c feature/effect-name
+
+# 修改 src/app.html / src/app.js / 素材后
+node --check src/app.js
+python3 src/build.py
+
+git add src music-fx-lab.html index.html design-qa.md
+git commit -m "Add or refine effect name"
+git push -u origin feature/effect-name
+```
+
+然后在 GitHub 上创建 PR，请另一位同事完成预览和代码检查后合并。
+
+### 线上发布的重要说明
+
+`Audio-Visual-Lab` 是源码仓库；`haodman.com` 的 Vercel 站点来自另一个 `haodman/haodman.com` 仓库。因此：
+
+1. 合并到 `Audio-Visual-Lab/main` 会更新源码，**目前不会自动更新 haodman.com**。
+2. 要发布线上版，需把新的 `index.html`、`music-fx-lab.html` 和它们引用的 `src/music/` 资源同步到 `haodman/haodman.com` 的 `audio-visual-lab/` 目录。
+3. `haodman.com` 仓库合并到 `main` 后，Vercel 会自动部署。
+4. 发布后请实际打开 [https://haodman.com/audio-visual-lab/](https://haodman.com/audio-visual-lab/)，不要只以「GitHub 推送成功」作为验收。
+
+如果同事只有 `Audio-Visual-Lab` 的 Write 权限，他可以正常开发和提 PR，但不能自己发布到 `haodman.com`；线上发布还需要 `haodman.com` 仓库的 Write 权限。
 
 左侧手机中央的发布按钮会直接导出 15 秒 9:16 成片，包含当前图片、所选音乐、当前动态特效和手机端 UI。Chrome 支持时优先导出 MP4；不支持 MP4 编码时会自动回退为 WebM。
 
 ---
 
-## 2. 代码结构（app.js 的 9 个 section）
+## 3. 代码结构（app.js 的 9 个 section）
 
 | # | 模块 | 干什么 |
 |---|---|---|
@@ -61,7 +123,7 @@ src/music/       # 真实测试音乐、波形封面、LRC 和 library.json
 
 ---
 
-## 3. 加一个新效果（最常见的改动）
+## 4. 加一个新效果（最常见的改动）
 
 在 `app.js` 的 `FX` 对象里加一项，再把 id 加进 `FX_ORDER`，就出现在界面上了。模板：
 
@@ -99,15 +161,15 @@ myfx: {
 
 ---
 
-## 4. 现有 13 个效果
+## 5. 现有效果
 
-原图、碎块位移、像素扫描、LED 点阵、马赛克脉冲、波普四宫格、字符画、字符雨、频谱条、风迹、局部像素显影、局部横向拉丝、歌词双生分屏。
+原图、风迹、上下分屏、碎块位移、轮廓声场、单图打孔、像素扫描、LED 点阵、马赛克脉冲、波普四宫格、字符画、字符雨、频谱条、局部像素显影、局部横向拉丝。
 
 每个效果的技术能力、当前 Demo 边界与生产化建议见 `TECH-CAPABILITIES.md`。
 
 另有 30 个先前做过、目前从界面移除的效果，完整代码存在 `src/effects-archive.js` 里（百叶窗、分屏、立体翻转、镜像对称、网格切换、像素拉伸、像素排序、CRT、时间切片、胶片颗粒、频闪重影、径向拖影、冲击波、声波涟漪、环绕文字、轮廓心跳、主体残影、霓虹描边、粒子消散、融化下坠、拼图落位、组图海报、形状蒙版、唱片旋转、碎片飘落、彩虹气泡、五线谱、曲线文字、逐字歌词、节拍推近）。要恢复某一个：把对应条目粘回 `app.js` 里 `const FX = {` 的对象，再把它的 id 加进 `FX_ORDER`，重新 build 即可，依赖的工具函数都还在。
 
-## 5. 人像分割
+## 6. 人像分割
 
 所有静态图效果统一使用 **MODNet** 做高清 Alpha Matting（Transformers.js + WebGPU）。「局部横向拉丝」等 9:16 效果与「歌词双生分屏」的 9:8 构图使用同一模型和边缘处理，只按各自的裁切尺寸分开缓存结果；首次会下载模型，之后使用浏览器缓存。视频为了保持实时性使用 **MediaPipe Selfie Segmentation**。加载失败或离线时，回落到内置启发式抠像（边界洪泛 + 边缘阻挡 + 中心先验），质量较低但不会崩。当前状态显示在「素材」卡片标题右侧，勾选效果卡片里的「看抠像」能直接检查分割结果。
 
@@ -115,7 +177,7 @@ myfx: {
 
 ---
 
-## 6. 上线部署
+## 7. 上线部署
 
 单文件直接传静态服务器即可。素材和音乐建议走 manifest，不要再往 HTML 里塞：
 
@@ -142,7 +204,7 @@ CDN 需要开 CORS。也可以在页面里设 `window.MFX_MANIFEST = '...'`。
 
 ---
 
-## 7. 已知限制 / 下一步建议
+## 8. 已知限制 / 下一步建议
 
 - BPM 偶尔会识别成一半或两倍（Trap 常报 70 而不是 140，这是半拍的正常现象）；Drop 检测对混音动态依赖比较大，做过了阈值调优但不是百分百
 - 视频素材使用 MediaPipe 实时分割，质量会低于静态图的 MODNet 高清抠像
