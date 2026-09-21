@@ -26,6 +26,12 @@ for f in sorted(glob.glob('models/h*.jpg')):
     name, tags = horizontal_meta[os.path.basename(f)]
     presets.append({"name": name, "tags": tags,
                     "src": "data:image/jpeg;base64," + base64.b64encode(open(f, 'rb').read()).decode()})
+pack_manifest = os.path.join(here, 'models', 'eagle-pack', 'manifest.json')
+if os.path.exists(pack_manifest):
+    with open(pack_manifest, encoding='utf-8') as fh:
+        new_presets = json.load(fh)
+        new_presets.sort(key=lambda item: 0 if item['name'] == '绿衣街边咖啡' else 1 if item['name'] == '粉衣咖啡正坐' else 2)
+        presets = new_presets + presets
 arr = json.dumps(presets, ensure_ascii=False)
 
 # Optional real-audio test pack. Keep metadata in music/library.json; the build

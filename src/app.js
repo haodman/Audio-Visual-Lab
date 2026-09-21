@@ -893,8 +893,8 @@ const FX = {
   textWrap: {
     name: '文字环绕', icon: '🪐', desc: '文字沿主体外轮廓滚动',
     hint: '共用 MODNet 主体蒙版生成人物最外轮廓路径。文字按实际字宽占用弧长，逐字贴合曲线且不重叠；鼓点推进滚动并放大当前重点词，高频和旋律控制轻微呼吸。',
-    params: [Sel('copy', '文字来源', ['自定义文字', '自动歌词'], '自定义文字'), T('text', '自定义文字', 'just another day / caught in the moment / let me stay here a little longer'), Sel('font', '字体风格', ['窄体海报', '无衬线粗体', '衬线编辑', '等宽科技'], '窄体海报'), Sel('colorMode', '文字取色', ['参考粉色', '图片取色', '反差取色', '手动颜色'], '参考粉色'), C('col', '手动颜色', '#ff4fa3'), Sel('background', '画面风格', ['参考黑白', '保留原色'], '参考黑白'),
-      R('size', '基础字号', .65, 1.65, .86), R('emphasis', '局部大词', 1.5, 4.8, 3.35), R('offset', '轮廓距离', 8, 72, 30, 1), R('gap', '词间距', 2, 22, 8, 1), R('speed', '滚动速度', .05, 1.5, .5), R('lyricOffset', '歌词校准', -1.5, 1.5, 0, .05), R('pulse', '律动强度', 0, 2, 1.34), D('drv', 'beat', ['beat', 'kick', 'high', 'energy'])],
+    params: [Sel('copy', '文字来源', ['自定义文字', '自动歌词'], '自动歌词'), T('text', '自定义文字', 'just another day / caught in the moment / let me stay here a little longer'), Sel('font', '字体风格', ['窄体海报', '无衬线粗体', '衬线编辑', '等宽科技'], '窄体海报'), Sel('colorMode', '文字取色', ['参考粉色', '图片取色', '反差取色', '手动颜色'], '参考粉色'), C('col', '手动颜色', '#ff4fa3'), Sel('background', '画面风格', ['参考黑白', '保留原色'], '参考黑白'),
+      R('size', '基础字号', .65, 1.65, .86), R('emphasis', '局部大词', 1.5, 4.8, 3.35), R('offset', '轮廓距离', 8, 72, 30, 1), R('gap', '词间距', 2, 22, 8, 1), R('speed', '滚动速度', .05, 1.5, .5), R('lyricOffset', '歌词校准', -1.5, 1.5, 0, .05), R('pulse', '律动强度', 0, 2, .5), D('drv', 'beat', ['beat', 'kick', 'high', 'energy'])],
     state: { path: null, key: '', offset: 0, pulse: 0, focus: 0, was: 0, lastHit: -9, lastT: null, lyric: '', travel: 0, travelTarget: 0, lyricAbs: -1 },
     draw(f, p, t) { const s = this.state, dt = clamp(t - (s.lastT == null ? t : s.lastT), 0, .06); s.lastT = t;
       ctx.save(); if (p.background === '参考黑白') ctx.filter = 'grayscale(1) contrast(1.05)'; ctx.drawImage(src, 0, 0); ctx.restore();
@@ -913,7 +913,20 @@ const FX = {
       const follow = 1 - Math.exp(-dt * (lyricState ? 5.6 : 7.2)); s.travel += (s.travelTarget - s.travel) * follow; const focusAt = visibleStart + ((s.travel % visibleSpan) + visibleSpan) % visibleSpan, focusReserve = focusWidth * .62 + p.gap * 1.5, flowOffset = s.offset + s.travel * .34, start = -((flowOffset % cycle) + cycle) % cycle;
       ctx.save(); ctx.fillStyle = ink; ctx.strokeStyle = 'rgba(0,0,0,.16)'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
       let cursor = start - cycle, lap = -1; while (cursor < path.total + cycle && lap < Math.ceil(path.total / cycle) + 3) { for (let wi = 0; wi < tokens.length; wi++) { const m = regular[wi]; cursor += p.gap * .5; ctx.font = contourFont(fontName, m.fs); ctx.lineWidth = Math.max(.45, m.fs * .018); for (let gi = 0; gi < m.glyphs.length; gi++) { const gw = m.widths[gi], at = cursor + gw * .5, arcGap = Math.min(Math.abs(at - focusAt), path.total - Math.abs(at - focusAt)); if (at >= -80 && at <= path.total + 80 && arcGap > focusReserve) { const q = wrapPathPoint(path, at); let angle = q.angle; if (Math.cos(angle) < -.15) angle += Math.PI; ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(angle); ctx.strokeText(m.glyphs[gi], 0, 0); ctx.fillText(m.glyphs[gi], 0, 0); ctx.restore(); } cursor += gw; } cursor += p.gap * .5 + m.fs * .16; } lap++; }
-      let focusCursor = focusAt - focusWidth * .5; ctx.font = contourFont(fontName, focusMetric.fs); ctx.lineWidth = Math.max(.6, focusMetric.fs * .018); const focusMid = wrapPathPoint(path, focusAt), safe = focusMetric.fs * .58, focusShiftX = Math.max(0, safe - focusMid.x) - Math.max(0, focusMid.x - (W - safe)); for (let gi = 0; gi < focusMetric.glyphs.length; gi++) { const gw = focusMetric.widths[gi], q = wrapPathPoint(path, focusCursor + gw * .5); let angle = q.angle; if (Math.cos(angle) < -.15) angle += Math.PI; ctx.save(); ctx.translate(q.x + focusShiftX, q.y); ctx.rotate(angle); ctx.strokeText(focusMetric.glyphs[gi], 0, 0); ctx.fillText(focusMetric.glyphs[gi], 0, 0); ctx.restore(); focusCursor += gw; }
+      // Keep the inner edge of enlarged glyphs outside the silhouette. The path
+      // runs clockwise in canvas coordinates; its left normal points outward.
+      // Never clamp to the viewport: offscreen letters should be clipped, not
+      // pushed back onto the subject.
+      let focusCursor = focusAt - focusWidth * .5;
+      ctx.font = contourFont(fontName, focusMetric.fs); ctx.lineWidth = Math.max(.6, focusMetric.fs * .018);
+      const outward = Math.max(0, focusMetric.fs - base * breathe) * .58;
+      for (let gi = 0; gi < focusMetric.glyphs.length; gi++) {
+        const gw = focusMetric.widths[gi], q = wrapPathPoint(path, focusCursor + gw * .5);
+        const x = q.x + Math.sin(q.angle) * outward, y = q.y - Math.cos(q.angle) * outward;
+        let angle = q.angle; if (Math.cos(angle) < -.15) angle += Math.PI;
+        ctx.save(); ctx.translate(x, y); ctx.rotate(angle);
+        ctx.strokeText(focusMetric.glyphs[gi], 0, 0); ctx.fillText(focusMetric.glyphs[gi], 0, 0); ctx.restore(); focusCursor += gw;
+      }
       ctx.restore(); dropFlash(f, p); }
   },
 
@@ -1307,13 +1320,33 @@ function buildFxList() { const list = $('#fxlist'); list.innerHTML = '';
     b.innerHTML = `<span class="ico">${e.icon}</span>${e.name}`; b.title = e.desc; b.classList.toggle('on', id === S.fx);
     b.onclick = () => selectFx(id); list.appendChild(b); }
 }
+function buildEffectCopy() {
+  const box = $('#effectCopy'), id = S.fx, defs = FX[id].params, vals = S.params[id];
+  box.replaceChildren(); box.hidden = !defs.some(d => d.key === 'copy');
+  if (box.hidden) return;
+  const source = document.createElement('div'); source.className = 'copy-source';
+  for (const [value, title] of [['自动歌词', '歌曲歌词'], ['自定义文字', '自定义文字']]) {
+    const button = document.createElement('button'); button.className = 'chip' + (vals.copy === value ? ' on' : '');
+    button.textContent = title; button.setAttribute('aria-pressed', String(vals.copy === value));
+    button.onclick = () => { vals.copy = value; invalidateTextEffect(id); buildEffectCopy(); }; source.appendChild(button);
+  }
+  box.appendChild(source);
+  if (vals.copy === '自定义文字') {
+    const input = document.createElement('input'); input.type = 'text'; input.value = vals.text;
+    input.setAttribute('aria-label', '效果自定义文字'); input.placeholder = '输入文字，用 / 分隔短句';
+    input.oninput = () => { vals.text = input.value; invalidateTextEffect(id); }; box.appendChild(input);
+  } else {
+    const status = document.createElement('div'); status.className = 'copy-status';
+    status.textContent = S.lyrics.length ? `「${S.track?.name || '未命名'}」· ${S.lyrics.length} 条歌词，随播放自动切换` : '当前歌曲暂无歌词，请切换「自定义文字」';
+    box.appendChild(status);
+  }
+}
 function buildParams() {
+  buildEffectCopy();
   const box = $('#params'); box.innerHTML = ''; const defs = FX[S.fx].params, vals = S.params[S.fx];
   if (!defs.length) { box.innerHTML = '<div class="hint">该效果没有可调参数。</div>'; return; }
-  if (defs.some(d => d.key === 'copy')) { const lyricInfo = document.createElement('div'); lyricInfo.className = 'hint lyric-status';
-    lyricInfo.textContent = S.lyrics.length ? `🎵 当前歌曲「${S.track?.name || '未命名'}」已载入 ${S.lyrics.length} 条歌词，播放时按时间轴切换。` : `🎵 当前歌曲「${S.track?.name || '未选择'}」没有可用歌词；选择自动歌词后会明确显示“暂无歌词”。`;
-    box.appendChild(lyricInfo); }
-  for (const d of defs) { const row = document.createElement('div'); row.className = `p p-${d.type} p-${d.key}`; const lab = document.createElement('label'); lab.textContent = d.label; row.appendChild(lab);
+  for (const d of defs) { if (defs.some(p => p.key === 'copy') && ['copy', 'text'].includes(d.key)) continue;
+    const row = document.createElement('div'); row.className = `p p-${d.type} p-${d.key}`; const lab = document.createElement('label'); lab.textContent = d.label; row.appendChild(lab);
     if (d.type === 'range') { const inp = document.createElement('input'); inp.type = 'range'; inp.min = d.min; inp.max = d.max; inp.step = d.step; inp.value = vals[d.key]; const v = document.createElement('div'); v.className = 'v'; v.textContent = fmt(vals[d.key], d.step); inp.oninput = () => { vals[d.key] = +inp.value; v.textContent = fmt(+inp.value, d.step); if (d.key === 'pitch') delete S.cache['lum' + vals.pitch]; }; row.appendChild(inp); row.appendChild(v); }
     else if (d.type === 'text') { const inp = document.createElement('input'); inp.type = 'text'; inp.value = vals[d.key]; inp.placeholder = '用 / 或逗号分隔'; inp.style.gridColumn = '2/4'; inp.className = 'txt'; inp.oninput = () => vals[d.key] = inp.value; row.appendChild(inp); }
     else if (d.type === 'color') { const inp = document.createElement('input'); inp.type = 'color'; inp.value = vals[d.key]; inp.oninput = () => vals[d.key] = inp.value; row.appendChild(inp); row.appendChild(document.createElement('div')); }
@@ -1370,7 +1403,7 @@ $('#musicUp2').onclick = () => $('#musicFile').click();
 $('#musicDirBtn2').onclick = () => $('#musicDir').click();
 async function loadTrack(tr) { S.trackId = tr.id;
   document.querySelectorAll('#tracks button').forEach(b => b.classList.toggle('on', b.dataset.id === tr.id));
-  S.track = tr; S.lyrics = parseLRC(tr.lrc || ''); invalidateTextEffect(); if ($('#sheet').classList.contains('on') && !$('#sheetParams').hidden) buildParams(); $('#nowT').textContent = tr.name; if (S.playing) pause(); S.pausedAt = 0;
+  S.track = tr; S.lyrics = parseLRC(tr.lrc || ''); invalidateTextEffect(); buildEffectCopy(); if ($('#sheet').classList.contains('on') && !$('#sheetParams').hidden) buildParams(); $('#nowT').textContent = tr.name; if (S.playing) pause(); S.pausedAt = 0;
   const disc = $('#discBtn'); disc.style.backgroundImage = tr.cover ? `url("${tr.cover}")` : ''; disc.classList.toggle('has-cover', !!tr.cover);
   try {
     if (tr.kind === 'pack') { $('#status').textContent = '解码并分析中…'; $('#nowD').textContent = (tr.artist || tr.genre) + ' · 内置测试音乐'; if (!trackCache[tr.id]) trackCache[tr.id] = await ac().decodeAudioData(await (await fetch(tr.url)).arrayBuffer()); }
@@ -1499,6 +1532,8 @@ function renderGallery(reset = false) { const box = $('#photos'); if (reset) { g
   box.querySelectorAll('button[data-i],button.more').forEach(x => x.remove());
   const matches = PRESETS.map((d, i) => [d, i]).filter(([d]) => presetMatches(d));
   for (const [d, i] of matches.slice(0, galleryLimit)) box.appendChild(presetButton(d, i));
+  const pinned = box.querySelector('button[data-i="0"]');
+  if (pinned) box.insertBefore(pinned, box.children[1]);
   if (galleryLimit < matches.length) { const more = document.createElement('button'); more.className = 'up more'; more.textContent = `加载更多\n${Math.min(galleryLimit, matches.length)} / ${matches.length}`; more.style.whiteSpace = 'pre-line'; more.onclick = () => { galleryLimit += 24; renderGallery(); applyFilter(); }; box.appendChild(more); }
 }
 function buildPhotos() { const box = $('#photos'), fl = $('#filters');
