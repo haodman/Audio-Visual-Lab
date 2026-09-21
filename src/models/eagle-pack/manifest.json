@@ -8,7 +8,39 @@
       "室内"
     ],
     "src": "src/models/eagle-pack/MTAR8LOKKWTH0.jpg",
-    "thumb": "src/models/eagle-pack/MTAR8LOKKWTH0-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MTAR8LOKKWTH0-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.7929691672325134,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "y": 0.43134570121765137,
+        "h": 0.31722715497016907,
+        "x": 0.2934827506542206,
+        "w": 0.4229695200920105
+      }
+    ]
   },
   {
     "name": "楼梯咖啡",
@@ -18,17 +50,82 @@
       "室内"
     ],
     "src": "src/models/eagle-pack/MT9VRDISD4R8B.jpg",
-    "thumb": "src/models/eagle-pack/MT9VRDISD4R8B-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT9VRDISD4R8B-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.6427321434020996,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "y": 0.37618235126137733,
+        "w": 0.05056408420205116,
+        "h": 0.03792306408286095,
+        "x": 0.47600969672203064
+      }
+    ]
   },
   {
     "name": "窗边咖啡",
     "tags": [
       "竖图",
       "全身",
-      "室内"
+      "室内",
+      "MDP 示例"
     ],
     "src": "src/models/eagle-pack/MT969T7D7H1ZA.jpg",
-    "thumb": "src/models/eagle-pack/MT969T7D7H1ZA-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT969T7D7H1ZA-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.5927770733833313,
+        "maillard": 0.9175,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "h": 0.08458605408668518,
+        "w": 0.11278139799833298,
+        "y": 0.34871718287467957,
+        "x": 0.4637909531593323
+      }
+    ]
   },
   {
     "name": "海边粉衣双人",
@@ -36,10 +133,45 @@
       "竖图",
       "双人",
       "全身",
-      "户外"
+      "户外",
+      "MDP 示例"
     ],
     "src": "src/models/eagle-pack/MT9VRDIQC9PCI.jpg",
-    "thumb": "src/models/eagle-pack/MT9VRDIQC9PCI-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT9VRDIQC9PCI-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0.8561192750930786,
+        "water": 0.7299812436103821,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.6690047383308411,
+        "maillard": 0,
+        "pink": 0.7824166666666666
+      },
+      "repeated": [
+        "sky"
+      ],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "y": 0.3427772484719753,
+        "h": 0.04742426052689552,
+        "x": 0.7130131721496582,
+        "w": 0.06287307292222977
+      }
+    ]
   },
   {
     "name": "秋日长椅",
@@ -49,7 +181,39 @@
       "户外"
     ],
     "src": "src/models/eagle-pack/MT969T7DTE8KE.jpg",
-    "thumb": "src/models/eagle-pack/MT969T7DTE8KE-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT969T7DTE8KE-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.5786393880844116,
+        "maillard": 0.8376388888888888,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "y": 0.2623577192425728,
+        "h": 0.090766541659832,
+        "x": 0.4461355209350586,
+        "w": 0.1210220530629158
+      }
+    ]
   },
   {
     "name": "海边撑伞",
@@ -59,7 +223,34 @@
       "户外"
     ],
     "src": "src/models/eagle-pack/MT9VRDIQR4J7H.jpg",
-    "thumb": "src/models/eagle-pack/MT9VRDIQR4J7H-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT9VRDIQR4J7H-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0.8637978434562683,
+        "water": 0.499605268239975,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.6836275458335876,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [
+        "sky"
+      ],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": []
   },
   {
     "name": "海边与小狗",
@@ -69,7 +260,41 @@
       "户外"
     ],
     "src": "src/models/eagle-pack/MT9VRDIQFS0I6.jpg",
-    "thumb": "src/models/eagle-pack/MT9VRDIQFS0I6-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT9VRDIQFS0I6-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0.8231129050254822,
+        "water": 0.4978317618370056,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.7991141080856323,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [
+        "sky"
+      ],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "x": 0.5058905482292175,
+        "w": 0.05755216255784035,
+        "h": 0.043164122849702835,
+        "y": 0.3850194327533245
+      }
+    ]
   },
   {
     "name": "绿衣街边咖啡",
@@ -79,7 +304,39 @@
       "户外"
     ],
     "src": "src/models/eagle-pack/MT969T7D9RU8O.jpg",
-    "thumb": "src/models/eagle-pack/MT969T7D9RU8O-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT969T7D9RU8O-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0.4,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.7426787614822388,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "x": 0.46504971385002136,
+        "y": 0.3069612383842468,
+        "w": 0.11180949956178665,
+        "h": 0.08385711908340454
+      }
+    ]
   },
   {
     "name": "机场行李箱",
@@ -89,7 +346,32 @@
       "室内"
     ],
     "src": "src/models/eagle-pack/MTAR8LOK97U2P.jpg",
-    "thumb": "src/models/eagle-pack/MTAR8LOK97U2P-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MTAR8LOK97U2P-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.71533203125,
+        "maillard": 0.79,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": []
   },
   {
     "name": "灰卫衣镜拍",
@@ -100,7 +382,39 @@
       "室内"
     ],
     "src": "src/models/eagle-pack/MTAR8LOJVBSYS.jpg",
-    "thumb": "src/models/eagle-pack/MTAR8LOJVBSYS-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MTAR8LOJVBSYS-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.7880893349647522,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "y": 0.21661179512739182,
+        "w": 0.13703379034996033,
+        "x": 0.44599291682243347,
+        "h": 0.10277534276247025
+      }
+    ]
   },
   {
     "name": "公园蓝毛衣",
@@ -110,17 +424,82 @@
       "户外"
     ],
     "src": "src/models/eagle-pack/MT9VRDIRX3WZ1.jpg",
-    "thumb": "src/models/eagle-pack/MT9VRDIRX3WZ1-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT9VRDIRX3WZ1-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0.4,
+        "water": 0,
+        "forest": 0.4,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0.4,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.6055419445037842,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "x": 0.3830837309360504,
+        "h": 0.07394325733184814,
+        "w": 0.09812375158071518,
+        "y": 0.3874392509460449
+      }
+    ]
   },
   {
     "name": "秋日长大衣",
     "tags": [
       "竖图",
       "全身",
-      "户外"
+      "户外",
+      "MDP 示例"
     ],
     "src": "src/models/eagle-pack/MT969T7DQ9C5O.jpg",
-    "thumb": "src/models/eagle-pack/MT969T7DQ9C5O-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT969T7DQ9C5O-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0.6646084785461426,
+        "water": 0,
+        "forest": 0,
+        "tree": 0.4,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.802528977394104,
+        "maillard": 0.9099999999999999,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "x": 0.47422999143600464,
+        "y": 0.32154591009020805,
+        "w": 0.06943478435277939,
+        "h": 0.05207609012722969
+      }
+    ]
   },
   {
     "name": "墨镜近景自拍",
@@ -131,7 +510,41 @@
       "户外"
     ],
     "src": "src/models/eagle-pack/MT969T7EH19DI.jpg",
-    "thumb": "src/models/eagle-pack/MT969T7EH19DI-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT969T7EH19DI-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.6653703451156616,
+        "maillard": 0.8423611111111111,
+        "pink": 0
+      },
+      "repeated": [
+        "portrait"
+      ],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "y": 0.20900988578796387,
+        "x": 0.3620554208755493,
+        "h": 0.48119381070137024,
+        "w": 0.3608953654766083
+      }
+    ]
   },
   {
     "name": "蓝帽卫衣自拍",
@@ -142,7 +555,39 @@
       "室内"
     ],
     "src": "src/models/eagle-pack/MTAR8LOH90GDX.jpg",
-    "thumb": "src/models/eagle-pack/MTAR8LOH90GDX-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MTAR8LOH90GDX-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.46440792083740234,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "x": 0.3794248402118683,
+        "h": 0.21933436393737793,
+        "y": 0.3973567485809326,
+        "w": 0.2924458384513855
+      }
+    ]
   },
   {
     "name": "黑衬衫镜拍",
@@ -153,7 +598,39 @@
       "室内"
     ],
     "src": "src/models/eagle-pack/MTAR8LOIGHPFB.jpg",
-    "thumb": "src/models/eagle-pack/MTAR8LOIGHPFB-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MTAR8LOIGHPFB-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.87060546875,
+        "maillard": 0.8190277777777778,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "w": 0.16438902914524078,
+        "x": 0.3361794352531433,
+        "y": 0.23957791179418564,
+        "h": 0.12329176813364029
+      }
+    ]
   },
   {
     "name": "红沙发电脑",
@@ -163,7 +640,39 @@
       "室内"
     ],
     "src": "src/models/eagle-pack/MTAR8LOJXJ2YR.jpg",
-    "thumb": "src/models/eagle-pack/MTAR8LOJXJ2YR-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MTAR8LOJXJ2YR-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.5157358646392822,
+        "maillard": 0.8186111111111111,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "w": 0.04561512544751167,
+        "x": 0.4939849078655243,
+        "y": 0.5537232980132103,
+        "h": 0.03421134501695633
+      }
+    ]
   },
   {
     "name": "机舱镜拍",
@@ -174,7 +683,39 @@
       "室内"
     ],
     "src": "src/models/eagle-pack/MT969T7EO48BZ.jpg",
-    "thumb": "src/models/eagle-pack/MT969T7EO48BZ-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT969T7EO48BZ-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.8247071504592896,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "y": 0.3740803748369217,
+        "x": 0.2628665566444397,
+        "w": 0.1756765991449356,
+        "h": 0.131757453083992
+      }
+    ]
   },
   {
     "name": "街边汉堡",
@@ -182,10 +723,46 @@
       "竖图",
       "半身",
       "户外",
-      "夜景"
+      "夜景",
+      "MDP 示例"
     ],
     "src": "src/models/eagle-pack/MT9VRDITUN4JC.jpg",
-    "thumb": "src/models/eagle-pack/MT9VRDITUN4JC-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT9VRDITUN4JC-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0.9143519401550293,
+        "water": 0,
+        "forest": 0,
+        "tree": 0.6640625,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0.6640625,
+        "portrait": 0.6279296875,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [
+        "tree",
+        "city"
+      ],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "x": 0.4996972680091858,
+        "w": 0.11921081691980362,
+        "y": 0.35669533908367157,
+        "h": 0.08940811455249786
+      }
+    ]
   },
   {
     "name": "夜晚车窗",
@@ -196,7 +773,39 @@
       "夜景"
     ],
     "src": "src/models/eagle-pack/MT9VRDIREH5GG.jpg",
-    "thumb": "src/models/eagle-pack/MT9VRDIREH5GG-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT9VRDIREH5GG-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0.4,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.8315449953079224,
+        "maillard": 0.8948611111111111,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "y": 0.45777036994695663,
+        "h": 0.09227762371301651,
+        "x": 0.5712844133377075,
+        "w": 0.12303683161735535
+      }
+    ]
   },
   {
     "name": "耳机镜拍",
@@ -207,7 +816,41 @@
       "室内"
     ],
     "src": "src/models/eagle-pack/MT969T7FHQT5M.jpg",
-    "thumb": "src/models/eagle-pack/MT969T7FHQT5M-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT969T7FHQT5M-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.65,
+        "maillard": 0.8218055555555556,
+        "pink": 0
+      },
+      "repeated": [
+        "portrait"
+      ],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "h": 0.14466668665409088,
+        "w": 0.19288893043994904,
+        "y": 0.1734723299741745,
+        "x": 0.592279314994812
+      }
+    ]
   },
   {
     "name": "雨靴与小狗",
@@ -216,17 +859,81 @@
       "户外"
     ],
     "src": "src/models/eagle-pack/MT9VRDIQ0USII.jpg",
-    "thumb": "src/models/eagle-pack/MT9VRDIQ0USII-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT9VRDIQ0USII-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": []
   },
   {
     "name": "街头买咖啡",
     "tags": [
       "竖图",
       "半身",
-      "户外"
+      "户外",
+      "MDP 示例"
     ],
     "src": "src/models/eagle-pack/MTAR8LOJWMAF8.jpg",
-    "thumb": "src/models/eagle-pack/MTAR8LOJWMAF8-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MTAR8LOJWMAF8-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0.82861328125,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0.82861328125,
+        "portrait": 0.8383793234825134,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "h": 0.04023681581020355,
+        "w": 0.053649090230464935,
+        "y": 0.41423816978931427,
+        "x": 0.7371391654014587
+      },
+      {
+        "y": 0.3292279839515686,
+        "x": 0.445698082447052,
+        "w": 0.06587958335876465,
+        "h": 0.049409687519073486
+      }
+    ]
   },
   {
     "name": "城市墨镜自拍",
@@ -237,7 +944,41 @@
       "户外"
     ],
     "src": "src/models/eagle-pack/MT969T7FM64E2.jpg",
-    "thumb": "src/models/eagle-pack/MT969T7FM64E2-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT969T7FM64E2-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0.6865234375,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0.6865234375,
+        "portrait": 0.8959963917732239,
+        "maillard": 0.7868055555555555,
+        "pink": 0
+      },
+      "repeated": [
+        "portrait"
+      ],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "w": 0.22962026298046112,
+        "x": 0.42157065868377686,
+        "h": 0.17221519351005554,
+        "y": 0.3311961889266968
+      }
+    ]
   },
   {
     "name": "红头巾街拍",
@@ -247,7 +988,39 @@
       "户外"
     ],
     "src": "src/models/eagle-pack/MT969T7E28K2H.jpg",
-    "thumb": "src/models/eagle-pack/MT969T7E28K2H-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT969T7E28K2H-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0.74462890625,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0.74462890625,
+        "portrait": 0.9033203721046448,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "y": 0.274889312684536,
+        "h": 0.09071443229913712,
+        "x": 0.3234233558177948,
+        "w": 0.12095257639884949
+      }
+    ]
   },
   {
     "name": "红背心街拍",
@@ -257,7 +1030,39 @@
       "户外"
     ],
     "src": "src/models/eagle-pack/MT969T7FR64W7.jpg",
-    "thumb": "src/models/eagle-pack/MT969T7FR64W7-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT969T7FR64W7-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.9423828125,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "x": 0.46408647298812866,
+        "h": 0.06879083067178726,
+        "w": 0.09172110259532928,
+        "y": 0.3220622166991234
+      }
+    ]
   },
   {
     "name": "黑衣街边",
@@ -267,7 +1072,41 @@
       "户外"
     ],
     "src": "src/models/eagle-pack/MT969T7EW5K8M.jpg",
-    "thumb": "src/models/eagle-pack/MT969T7EW5K8M-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT969T7EW5K8M-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0.6484375,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0.6484375,
+        "portrait": 0.9145509600639343,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [
+        "portrait"
+      ],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "y": 0.2720368355512619,
+        "h": 0.09684522449970245,
+        "w": 0.12912696599960327,
+        "x": 0.40428414940834045
+      }
+    ]
   },
   {
     "name": "街边俯拍",
@@ -277,7 +1116,41 @@
       "户外"
     ],
     "src": "src/models/eagle-pack/MT969T7F6KI97.jpg",
-    "thumb": "src/models/eagle-pack/MT969T7F6KI97-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT969T7F6KI97-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.65,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [
+        "portrait"
+      ],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "h": 0.10355821996927261,
+        "x": 0.46398821473121643,
+        "y": 0.17642512172460556,
+        "w": 0.13807763159275055
+      }
+    ]
   },
   {
     "name": "地铁条纹衫",
@@ -287,7 +1160,39 @@
       "室内"
     ],
     "src": "src/models/eagle-pack/MT969T7G98FZX.jpg",
-    "thumb": "src/models/eagle-pack/MT969T7G98FZX-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT969T7G98FZX-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.8300784230232239,
+        "maillard": 0.8826388888888889,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "x": 0.41603168845176697,
+        "y": 0.33716730773448944,
+        "w": 0.13467369973659515,
+        "h": 0.10100527107715607
+      }
+    ]
   },
   {
     "name": "斑马线街拍",
@@ -297,7 +1202,41 @@
       "户外"
     ],
     "src": "src/models/eagle-pack/MT969T7EZD5NI.jpg",
-    "thumb": "src/models/eagle-pack/MT969T7EZD5NI-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT969T7EZD5NI-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0.4,
+        "water": 0,
+        "forest": 0,
+        "tree": 0.666015625,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0.666015625,
+        "portrait": 0.8115234971046448,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [
+        "portrait"
+      ],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "y": 0.2919793874025345,
+        "h": 0.08923523128032684,
+        "w": 0.1189803034067154,
+        "x": 0.48184266686439514
+      }
+    ]
   },
   {
     "name": "车内绿毛衣",
@@ -307,7 +1246,32 @@
       "室内"
     ],
     "src": "src/models/eagle-pack/MT969T7DYUH9E.jpg",
-    "thumb": "src/models/eagle-pack/MT969T7DYUH9E-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT969T7DYUH9E-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.5445510149002075,
+        "maillard": 0.7775,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": []
   },
   {
     "name": "黄帽镜拍",
@@ -318,27 +1282,113 @@
       "室内"
     ],
     "src": "src/models/eagle-pack/MT969T7CWWK0U.jpg",
-    "thumb": "src/models/eagle-pack/MT969T7CWWK0U-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT969T7CWWK0U-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.6665130853652954,
+        "maillard": 0.7661111111111111,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": []
   },
   {
     "name": "粉衣咖啡侧坐",
     "tags": [
       "竖图",
       "全身",
-      "户外"
+      "户外",
+      "MDP 示例"
     ],
     "src": "src/models/eagle-pack/MT969T7DSJH6X.jpg",
-    "thumb": "src/models/eagle-pack/MT969T7DSJH6X-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT969T7DSJH6X-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0.587890625,
+        "portrait": 0.65,
+        "maillard": 0,
+        "pink": 0.80575
+      },
+      "repeated": [
+        "portrait"
+      ],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": []
   },
   {
     "name": "粉衣咖啡正坐",
     "tags": [
       "竖图",
       "全身",
-      "户外"
+      "户外",
+      "MDP 示例"
     ],
     "src": "src/models/eagle-pack/MT969T7C82GS4.jpg",
-    "thumb": "src/models/eagle-pack/MT969T7C82GS4-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT969T7C82GS4-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0.5087890625,
+        "portrait": 0.7661512494087219,
+        "maillard": 0,
+        "pink": 0.8123611111111111
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "x": 0.40323370695114136,
+        "w": 0.07103325426578522,
+        "y": 0.31547241285443306,
+        "h": 0.05327494069933891
+      }
+    ]
   },
   {
     "name": "白帽横版自拍",
@@ -349,6 +1399,40 @@
       "户外"
     ],
     "src": "src/models/eagle-pack/MT9ON1MGYKV3D.jpg",
-    "thumb": "src/models/eagle-pack/MT9ON1MGYKV3D-thumb.jpg"
+    "thumb": "src/models/eagle-pack/MT9ON1MGYKV3D-thumb.jpg",
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.65,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [
+        "portrait"
+      ],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "x": 0.45268335938453674,
+        "h": 0.28135719895362854,
+        "y": 0.23390522599220276,
+        "w": 0.2110178917646408
+      }
+    ]
   }
 ]

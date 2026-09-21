@@ -1,0 +1,1086 @@
+[
+  {
+    "id": "photo-733a6ad5639437",
+    "name": "Shopping cart",
+    "tags": [
+      "MDP 照片",
+      "竖图"
+    ],
+    "src": "src/models/mdp-pack/photo-733a6ad5639437.webp",
+    "thumb": "src/models/mdp-pack/photo-733a6ad5639437-thumb.webp",
+    "width": 1533,
+    "height": 2048,
+    "scene": {
+      "scores": {
+        "sky": 0.4226774275302887,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.8706058263778687,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "h": 0.14651821553707123,
+        "x": 0.31568071246147156,
+        "y": 0.18141688406467438,
+        "w": 0.19573992490768433
+      }
+    ]
+  },
+  {
+    "id": "photo-2dd5f2ddb6c81c",
+    "name": "Coastal breeze",
+    "tags": [
+      "MDP 照片",
+      "竖图"
+    ],
+    "src": "src/models/mdp-pack/photo-2dd5f2ddb6c81c.webp",
+    "thumb": "src/models/mdp-pack/photo-2dd5f2ddb6c81c-thumb.webp",
+    "width": 1533,
+    "height": 2048,
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.8696293234825134,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "w": 0.14745455980300903,
+        "y": 0.23247499018907547,
+        "h": 0.11037492007017136,
+        "x": 0.37321797013282776
+      }
+    ]
+  },
+  {
+    "id": "photo-9579809b40cdb8",
+    "name": "Red postbox",
+    "tags": [
+      "MDP 照片",
+      "竖图"
+    ],
+    "src": "src/models/mdp-pack/photo-9579809b40cdb8.webp",
+    "thumb": "src/models/mdp-pack/photo-9579809b40cdb8-thumb.webp",
+    "width": 1533,
+    "height": 2048,
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0.6059571504592896,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0.60595703125,
+        "city": 0,
+        "portrait": 0.5633689761161804,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "w": 0.2215447723865509,
+        "x": 0.47247645258903503,
+        "y": 0.30853529274463654,
+        "h": 0.16583405435085297
+      }
+    ]
+  },
+  {
+    "id": "photo-c7313e765b1dfa",
+    "name": "Quiet pool",
+    "tags": [
+      "MDP 照片",
+      "竖图"
+    ],
+    "src": "src/models/mdp-pack/photo-c7313e765b1dfa.webp",
+    "thumb": "src/models/mdp-pack/photo-c7313e765b1dfa-thumb.webp",
+    "width": 1533,
+    "height": 2048,
+    "scene": {
+      "scores": {
+        "sky": 0.65,
+        "water": 0.6621094942092896,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [
+        "sky"
+      ],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": []
+  },
+  {
+    "id": "photo-acded38de247ea",
+    "name": "Orange by the window",
+    "tags": [
+      "MDP 照片",
+      "竖图"
+    ],
+    "src": "src/models/mdp-pack/photo-acded38de247ea.webp",
+    "thumb": "src/models/mdp-pack/photo-acded38de247ea-thumb.webp",
+    "width": 1533,
+    "height": 2048,
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": []
+  },
+  {
+    "id": "photo-91f1293a34d8c7",
+    "name": "Denim afternoon",
+    "tags": [
+      "MDP 照片",
+      "竖图"
+    ],
+    "src": "src/models/mdp-pack/photo-91f1293a34d8c7.webp",
+    "thumb": "src/models/mdp-pack/photo-91f1293a34d8c7-thumb.webp",
+    "width": 1533,
+    "height": 2048,
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.7729951739311218,
+        "maillard": 0.8536111111111111,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "y": 0.17827415466308594,
+        "x": 0.3958333432674408,
+        "w": 0.16271917521953583,
+        "h": 0.12180101871490479
+      }
+    ]
+  },
+  {
+    "id": "photo-dcdd8fd4433f81",
+    "name": "Window portrait",
+    "tags": [
+      "MDP 照片",
+      "竖图"
+    ],
+    "src": "src/models/mdp-pack/photo-dcdd8fd4433f81.webp",
+    "thumb": "src/models/mdp-pack/photo-dcdd8fd4433f81-thumb.webp",
+    "width": 1533,
+    "height": 2048,
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.7132464051246643,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "w": 0.2056010663509369,
+        "h": 0.15389962494373322,
+        "x": 0.42339709401130676,
+        "y": 0.2847837656736374
+      }
+    ]
+  },
+  {
+    "id": "photo-d762945c2e4bbf",
+    "name": "Cliffside portrait",
+    "tags": [
+      "MDP 照片",
+      "横图"
+    ],
+    "src": "src/models/mdp-pack/photo-d762945c2e4bbf.webp",
+    "thumb": "src/models/mdp-pack/photo-d762945c2e4bbf-thumb.webp",
+    "width": 852,
+    "height": 480,
+    "scene": {
+      "scores": {
+        "sky": 0.9631247520446777,
+        "water": 0.748615562915802,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.8666995167732239,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "x": 0.44110527634620667,
+        "y": 0.2597506046295166,
+        "h": 0.20314949750900269,
+        "w": 0.11445041745901108
+      }
+    ]
+  },
+  {
+    "id": "photo-46183d773c66da",
+    "name": "Forest walk",
+    "tags": [
+      "MDP 照片",
+      "横图"
+    ],
+    "src": "src/models/mdp-pack/photo-46183d773c66da.webp",
+    "thumb": "src/models/mdp-pack/photo-46183d773c66da-thumb.webp",
+    "width": 718,
+    "height": 478,
+    "scene": {
+      "scores": {
+        "sky": 0.4,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.7856496572494507,
+        "maillard": 0.7754166666666666,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "h": 0.136212557554245,
+        "x": 0.44558706879615784,
+        "y": 0.4158063232898712,
+        "w": 0.09068190306425095
+      }
+    ]
+  },
+  {
+    "id": "photo-552b2fed84bad3",
+    "name": "Lemon afternoon",
+    "tags": [
+      "MDP 照片",
+      "竖图"
+    ],
+    "src": "src/models/mdp-pack/photo-552b2fed84bad3.webp",
+    "thumb": "src/models/mdp-pack/photo-552b2fed84bad3-thumb.webp",
+    "width": 1197,
+    "height": 1600,
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.8266668319702148,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "x": 0.34050366282463074,
+        "y": 0.13824154436588287,
+        "w": 0.19714047014713287,
+        "h": 0.14748571813106537
+      }
+    ]
+  },
+  {
+    "id": "photo-dfc29af4069adc",
+    "name": "Desert walk",
+    "tags": [
+      "MDP 照片",
+      "竖图"
+    ],
+    "src": "src/models/mdp-pack/photo-dfc29af4069adc.webp",
+    "thumb": "src/models/mdp-pack/photo-dfc29af4069adc-thumb.webp",
+    "width": 1533,
+    "height": 2048,
+    "scene": {
+      "scores": {
+        "sky": 0.4602051377296448,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.5112544894218445,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "w": 0.03830784186720848,
+        "x": 0.5616396069526672,
+        "y": 0.5586619228124619,
+        "h": 0.028674766421318054
+      }
+    ]
+  },
+  {
+    "id": "photo-a28a599b632eaf",
+    "name": "Evening rooftop",
+    "tags": [
+      "MDP 照片",
+      "竖图"
+    ],
+    "src": "src/models/mdp-pack/photo-a28a599b632eaf.webp",
+    "thumb": "src/models/mdp-pack/photo-a28a599b632eaf-thumb.webp",
+    "width": 1533,
+    "height": 2048,
+    "scene": {
+      "scores": {
+        "sky": 0.46587473154067993,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.7783247828483582,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "h": 0.09060995280742645,
+        "x": 0.44275131821632385,
+        "w": 0.12104969471693039,
+        "y": 0.3273096829652786
+      }
+    ]
+  },
+  {
+    "id": "photo-2fd4c625ef7ca7",
+    "name": "Lighthouse coast",
+    "tags": [
+      "MDP 照片",
+      "竖图",
+      "MDP 示例"
+    ],
+    "src": "src/models/mdp-pack/photo-2fd4c625ef7ca7.webp",
+    "thumb": "src/models/mdp-pack/photo-2fd4c625ef7ca7-thumb.webp",
+    "width": 768,
+    "height": 1376,
+    "scene": {
+      "scores": {
+        "sky": 0.7270730137825012,
+        "water": 0.4,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.8652513027191162,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "y": 0.28853993117809296,
+        "w": 0.24275968968868256,
+        "x": 0.39864274859428406,
+        "h": 0.13549377024173737
+      }
+    ]
+  },
+  {
+    "id": "photo-66fe711a0414fa",
+    "name": "Fern garden",
+    "tags": [
+      "MDP 照片",
+      "竖图",
+      "MDP 示例"
+    ],
+    "src": "src/models/mdp-pack/photo-66fe711a0414fa.webp",
+    "thumb": "src/models/mdp-pack/photo-66fe711a0414fa-thumb.webp",
+    "width": 1086,
+    "height": 1448,
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0.783203125,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": []
+  },
+  {
+    "id": "photo-3b392aef6378b9",
+    "name": "Sunset clouds",
+    "tags": [
+      "MDP 照片",
+      "横图",
+      "MDP 示例"
+    ],
+    "src": "src/models/mdp-pack/photo-3b392aef6378b9.webp",
+    "thumb": "src/models/mdp-pack/photo-3b392aef6378b9-thumb.webp",
+    "width": 1536,
+    "height": 1024,
+    "scene": {
+      "scores": {
+        "sky": 0.9131612777709961,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [
+        "sky"
+      ],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": []
+  },
+  {
+    "id": "photo-6a4372fbeb6b8a",
+    "name": "Cloud sea",
+    "tags": [
+      "MDP 照片",
+      "横图",
+      "MDP 示例"
+    ],
+    "src": "src/models/mdp-pack/photo-6a4372fbeb6b8a.webp",
+    "thumb": "src/models/mdp-pack/photo-6a4372fbeb6b8a-thumb.webp",
+    "width": 1536,
+    "height": 1024,
+    "scene": {
+      "scores": {
+        "sky": 0.9517115950584412,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [
+        "sky"
+      ],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": []
+  },
+  {
+    "id": "photo-b9e1ff75b5a8f2",
+    "name": "Overcast sky",
+    "tags": [
+      "MDP 照片",
+      "横图",
+      "MDP 示例"
+    ],
+    "src": "src/models/mdp-pack/photo-b9e1ff75b5a8f2.webp",
+    "thumb": "src/models/mdp-pack/photo-b9e1ff75b5a8f2-thumb.webp",
+    "width": 1536,
+    "height": 1024,
+    "scene": {
+      "scores": {
+        "sky": 0.9805225133895874,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [
+        "sky"
+      ],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": []
+  },
+  {
+    "id": "photo-7734e100cf1298",
+    "name": "Violet sky",
+    "tags": [
+      "MDP 照片",
+      "横图",
+      "MDP 示例"
+    ],
+    "src": "src/models/mdp-pack/photo-7734e100cf1298.webp",
+    "thumb": "src/models/mdp-pack/photo-7734e100cf1298-thumb.webp",
+    "width": 1536,
+    "height": 1024,
+    "scene": {
+      "scores": {
+        "sky": 0.9033932685852051,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0.012451290152966976,
+        "portrait": 0,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [
+        "sky"
+      ],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": []
+  },
+  {
+    "id": "photo-553ae9f2e0312f",
+    "name": "Rose sky",
+    "tags": [
+      "MDP 照片",
+      "横图",
+      "MDP 示例"
+    ],
+    "src": "src/models/mdp-pack/photo-553ae9f2e0312f.webp",
+    "thumb": "src/models/mdp-pack/photo-553ae9f2e0312f-thumb.webp",
+    "width": 1536,
+    "height": 1024,
+    "scene": {
+      "scores": {
+        "sky": 0.9237585067749023,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0,
+        "maillard": 0,
+        "pink": 0.98
+      },
+      "repeated": [
+        "sky"
+      ],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": []
+  },
+  {
+    "id": "photo-e157788b6d9278",
+    "name": "Paris evening",
+    "tags": [
+      "MDP 照片",
+      "竖图"
+    ],
+    "src": "src/models/mdp-pack/photo-e157788b6d9278.webp",
+    "thumb": "src/models/mdp-pack/photo-e157788b6d9278-thumb.webp",
+    "width": 1533,
+    "height": 2048,
+    "scene": {
+      "scores": {
+        "sky": 0.4,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0.4,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0.6220703125,
+        "portrait": 0.8593786954879761,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [
+        "portrait"
+      ],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "y": 0.1358642876148224,
+        "w": 0.16479185223579407,
+        "h": 0.12335249781608582,
+        "x": 0.45295631885528564
+      }
+    ]
+  },
+  {
+    "id": "photo-d059b115d1766a",
+    "name": "Green light",
+    "tags": [
+      "MDP 照片",
+      "竖图"
+    ],
+    "src": "src/models/mdp-pack/photo-d059b115d1766a.webp",
+    "thumb": "src/models/mdp-pack/photo-d059b115d1766a-thumb.webp",
+    "width": 941,
+    "height": 1672,
+    "scene": {
+      "scores": {
+        "sky": 0.65,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [
+        "sky"
+      ],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": []
+  },
+  {
+    "id": "photo-e165edb47d2819",
+    "name": "Lemon soda",
+    "tags": [
+      "MDP 照片",
+      "竖图"
+    ],
+    "src": "src/models/mdp-pack/photo-e165edb47d2819.webp",
+    "thumb": "src/models/mdp-pack/photo-e165edb47d2819-thumb.webp",
+    "width": 941,
+    "height": 1672,
+    "scene": {
+      "scores": {
+        "sky": 0.65,
+        "water": 0.4,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.4,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [
+        "sky"
+      ],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": []
+  },
+  {
+    "id": "photo-8d567762713138",
+    "name": "Birthday cake",
+    "tags": [
+      "MDP 照片",
+      "竖图"
+    ],
+    "src": "src/models/mdp-pack/photo-8d567762713138.webp",
+    "thumb": "src/models/mdp-pack/photo-8d567762713138-thumb.webp",
+    "width": 941,
+    "height": 1672,
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0,
+        "maillard": 0.9206944444444445,
+        "pink": 0
+      },
+      "repeated": [],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": []
+  },
+  {
+    "id": "photo-ebde99987ed47f",
+    "name": "White lily",
+    "tags": [
+      "MDP 照片",
+      "竖图"
+    ],
+    "src": "src/models/mdp-pack/photo-ebde99987ed47f.webp",
+    "thumb": "src/models/mdp-pack/photo-ebde99987ed47f-thumb.webp",
+    "width": 941,
+    "height": 1672,
+    "scene": {
+      "scores": {
+        "sky": 0,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0.7973633408546448,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [
+        "flowers"
+      ],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": []
+  },
+  {
+    "id": "photo-73c36068579cb7",
+    "name": "Summit portrait",
+    "tags": [
+      "MDP 照片",
+      "竖图"
+    ],
+    "src": "src/models/mdp-pack/photo-73c36068579cb7.webp",
+    "thumb": "src/models/mdp-pack/photo-73c36068579cb7-thumb.webp",
+    "width": 1533,
+    "height": 2048,
+    "scene": {
+      "scores": {
+        "sky": 0.6709590554237366,
+        "water": 0,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0.5932626724243164,
+        "maillard": 0,
+        "pink": 0
+      },
+      "repeated": [
+        "sky"
+      ],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": [
+      {
+        "h": 0.07383585721254349,
+        "x": 0.47492715716362,
+        "w": 0.09864046424627304,
+        "y": 0.2500784322619438
+      }
+    ]
+  },
+  {
+    "id": "photo-1685291e529db1",
+    "name": "Sun over the sea",
+    "tags": [
+      "MDP 照片",
+      "竖图"
+    ],
+    "src": "src/models/mdp-pack/photo-1685291e529db1.webp",
+    "thumb": "src/models/mdp-pack/photo-1685291e529db1-thumb.webp",
+    "width": 941,
+    "height": 1672,
+    "scene": {
+      "scores": {
+        "sky": 0.9126945734024048,
+        "water": 0.7294922471046448,
+        "forest": 0,
+        "tree": 0,
+        "flowers": 0,
+        "garden": 0,
+        "night": 0,
+        "sheep": 0,
+        "bird": 0,
+        "butterfly": 0,
+        "leaf": 0,
+        "autumn": 0,
+        "blossom": 0,
+        "snow": 0,
+        "city": 0,
+        "portrait": 0,
+        "maillard": 0.8072222222222222,
+        "pink": 0
+      },
+      "repeated": [
+        "sky"
+      ],
+      "engine": "Pre-analyzed image cues (Apple Vision)"
+    },
+    "faces": []
+  }
+]

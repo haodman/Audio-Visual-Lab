@@ -96,3 +96,14 @@ The Chinese UI labels are the source of truth: `原图`, `风迹`, `上下分屏
 - Public files currently live in `haodman/haodman.com/audio-visual-lab/` and deploy through Vercel.
 - Root `index.html` serves the full app directly to avoid a visible redirect-link flash.
 - Deployment is not yet automated between the two repositories.
+
+
+## Source review branch: 上下打孔
+
+Revision 04 is authorized for source-branch push only. Do not merge or change `haodman/haodman.com`. The source base was checked against origin/main (f8cc7b9) on September 21. Read docs/punch-rules.md for the final selection, crop, color and rhythm rules.
+
+The existing WebAudio analyzer drives opening punch/paste events and a shared alternate-beat clock for all later motions, including rain impacts, seasonal releases, wing cycles and small gestures. Falling chips originate in the upper photo and cross the seam; captions stay on paper next to that seam. Crops cover the entire 9:8 photo panel; the artwork is 9:16 at 1080×1920.
+
+The native page has 14 English-caption examples and 26 additional user photos (84 photos total). City sky and Mountain air imports were removed, and the four generated seasonal images were rejected and removed before commit. Examples use existing originals: the user's cafe reference without stickers selects leaves; pink cafe outfits and seaside pink cardigans select petals. Strong Maillard/brown/camel or pink color evidence works independently of semantic model availability; dense matching silhouettes remain vetoed. The 26-photo MDP pack and 34 existing eagle-pack entries carry scene cues and face boxes for static use. Uploaded photos still use live classification. Source photo paths are relative and local audio/video/font/runtime assets are excluded.
+
+This one feature belongs to branch feature/punch-music-refine and one dedicated PR. Source push and PR creation are authorized; merging and website changes are not. Static demos keep the current song or use repository unhappy when the optional local preview API is absent.

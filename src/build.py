@@ -32,6 +32,9 @@ if os.path.exists(pack_manifest):
         new_presets = json.load(fh)
         new_presets.sort(key=lambda item: 0 if item['name'] == '绿衣街边咖啡' else 1 if item['name'] == '粉衣咖啡正坐' else 2)
         presets = new_presets + presets
+mdp_manifest=os.path.join(here,'models','mdp-pack','manifest.json')
+if os.path.exists(mdp_manifest):
+    with open(mdp_manifest,encoding='utf-8') as fh: presets=json.load(fh)+presets
 arr = json.dumps(presets, ensure_ascii=False)
 
 # Optional real-audio test pack. Keep metadata in music/library.json; the build
@@ -61,9 +64,14 @@ music_arr = json.dumps(music_library, ensure_ascii=False)
 
 html = open('app.html', encoding='utf-8').read()
 rhythm_puzzle_js = open('rhythm-puzzle.js', encoding='utf-8').read()
+punch_js = '\n'.join(open(name, encoding='utf-8').read() for name in ['punch-shapes.js','punch-studio.js','punch-scene.js','punch-presets.js','punch-effect.js'])
+punch_js=punch_js.replace('/*__PUNCH_EXAMPLES__*/[]',open('models/mdp-pack/examples.json',encoding='utf-8').read())
 js = open('app.js', encoding='utf-8').read()
 js = js.replace('/*__PACK_TRACKS__*/[]', music_arr)
-html = html.replace('/*__PRESETS__*/[]', arr).replace('<script src="rhythm-puzzle.js"></script>\n<script src="app.js"></script>', '<script>\n' + rhythm_puzzle_js + '\n' + js + '\n</script>')
+script_tags = '\n'.join('<script src="' + name + '"></script>' for name in ['rhythm-puzzle.js','punch-shapes.js','punch-studio.js','punch-scene.js','punch-presets.js','punch-effect.js','app.js'])
+assert script_tags in html, 'Source script tags changed; update build order.'
+html = html.replace('/*__PRESETS__*/[]', arr).replace(script_tags, '<script>\n' + rhythm_puzzle_js + '\n' + punch_js + '\n' + js + '\n</script>')
 out = os.path.join(os.path.dirname(here), 'music-fx-lab.html')
 open(out, 'w', encoding='utf-8').write(html)
+open(os.path.join(os.path.dirname(here), 'index.html'), 'w', encoding='utf-8').write(html)
 print('built', out, round(len(html) / 1e6, 2), 'MB')
