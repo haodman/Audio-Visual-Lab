@@ -1,3 +1,38 @@
+## 2026-09-21 · Punch Studio revision 03 — native website review
+
+- Removed padding in every crop mode. Photo panels always fill 1080×960 without distortion; face-aware automatic positioning and manual framing remain available. All twelve demo captions are English.
+- Formation cues occur every second returned beat. Individual positions ease over 78% of the two-beat interval, capped at 1.6s. Nearest destination assignment reduces crossings. No abrupt position reset at a cue.
+- Rain, petals and leaves now originate at holes in the upper photograph and cross the seam into the lower paper. Gravity paste transitions also travel from source holes. Rain falls vertically and scatters at beat timestamps; leaves/petals turn and drift naturally. Captions remain near the seam and render over falling cutouts.
+- Verified the downloaded current public page and existing local source had identical stylesheet content before adding the example entry. Retained the native phone/player/analysis/effects/material layout and shared right-side drawer. A new 示例 button opens the existing parameter drawer with twelve photo examples.
+- Imported 28 visually reviewed, distinct user-input photos. Kept the original 58 presets (86 total). MDP 照片 filters the new collection; MDP 示例 filters all twelve demo photos. Background textures, masks, intermediate screenshots and repeated exports were excluded according to the user's clarification. The 56 relative WebP photo/thumbnail files total 9.48 MB and remain lazy-loaded. No local paths or local-only audio are included in this publishable photo pack.
+- Core checks: 15 passed, including full-bleed geometry, continuous two-beat formation transitions and all three gravity types crossing from upper to lower panel. Existing 12×10 shape/material checks retained.
+- Real-browser checks: twelve examples/unique shapes selected in the native drawer, English captions, 28-photo filter, retained original material count, all 56 image endpoints, viewport-preserving drawer, manual framing, standalone page and real 15-second export. No local failed responses or JavaScript errors captured. Rain upper/lower frames confirmed continuous cross-seam travel.
+- Media validation: all twelve revised H.264/AAC demo videos and the native-page export decoded cleanly at 1080×1920. Native browser recording is variable frame rate around 30 fps; offline movies are fixed 30 fps.
+- User-facing evidence: website-layout-v3.png, user-photo-library.png, demo-overview.png, the twelve movies and English rules in the local output folder. Website-style local entry: /audio-visual-lab/?effect=punchSymbols&demo=reality&v=3.
+- Source and website remain unpushed and undeployed. The photo pack is ready to synchronize alongside the built pages after user visual approval. Hosted CLIP verification remains a pre-publication check; the native local page uses Apple Vision.
+
+## 2026-09-21 · Punch Studio revision 02 — local review
+
+- User corrections: English matching/crop rules; individual bird/butterfly formation targets; website WebAudio beats only; seam-side captions in both orientations; twelve photo examples; original-photo crop controls; all punch outputs 9:16.
+- Bird targets: flock, chevron, circle, wave, arc. Butterfly targets: scatter, ring, figure eight, spiral, rosette. The mean center is fixed and many pairwise distances change. No shared horizontal travel. Caption space is reserved above the seam on upper paper and below the seam on lower paper.
+- Direct original-photo input removes double cropping. Auto mode retains at least 82% via fill or preserves the complete image with neutral matting. Fill supports x/y framing and zoom. Available local face boxes can trigger full-image retention and discourage face punching. Hosted browser classification does not currently supply face boxes.
+- Twelve 15-second H.264/AAC demo movies generated at 1080×1920, 30 fps; all fully decoded without errors. Reality, Touch and repository unhappy. Four automatic examples and eight explicit shape studies are distinguished in the UI and manifest. All twelve shapes loaded through the actual browser selector.
+- Browser checks: English UTF-8 rule page and recipes; photo/music upload; crop framing/full-image retention; empty and custom captions; frozen pause; 390px layout; both standalone and repository actual exports at 1080×1920 with audio. No page/effect errors captured. Repository export now directly renders artwork at export resolution instead of recording the phone frame.
+- Targeted follow-up: actual timed lyric at 24.3 seconds visibly appeared in the lower paper caption band. Final repository export verified as H.264/AAC at 1080×1920. New uploads clear untouched demo metadata.
+- Thirteen core checks passed, including all 120 shape/material combinations, automatic shape reachability, deterministic frames, phase timestamps, individual formation distances, seam-side caption bands and crop geometry.
+- Local screenshot evidence: studio-v2-final.png, studio-v2-mobile.png, rules-v2.png and repo-preview.png in the task work directory. User-facing gallery, formation contact sheets and media are in the local review output folder. Revision 01 evidence below is historical and superseded.
+- No push or deployment. Await user visual approval. Static CLIP path remains a pre-publication check. Do not publish personal demo music, generated videos, local tools, system fonts or absolute local asset paths.
+
+## 2026-09-21 · 上下打孔本地审片
+
+- Replaced the paired-coordinate glyph effect with user-derived vector cutters, photo-matched chips, scattered source holes and three asymmetric destination groups. Twelve shapes and ten procedural materials; shared deterministic renderer for local movies and repository preview. Gravity shapes use photo above paper.
+- Automatic rules combine image scene evidence and provided song metadata. Repeated flowers/forest silhouettes are vetoed. Photo hue-family selection and light/dark contrast are recorded. Rules in docs/punch-rules.md. Apple Vision full/crop classification tested through the local service. Static browser CLIP path is implemented but remains a pre-publication validation item.
+- A/B movies: Reality, Touch and repository unhappy; full supplied audio analyzed at 44.1 kHz, render interval 0–15 seconds, 810×1080 at 30 fps. Same input, seed and decoded audio for each pair. Each movie decodes successfully; no independent beat ground truth. Beat This! is local only while user selects the engine.
+- Browser: standalone uploaded new violet-sky image and unhappy audio, empty/custom text, seek, frozen pause, 390px width and actual MP4 with audio export passed. Repository checked 540×960 canvas, portrait and landscape-tagged materials, shared parameter drawer, shape/material changes, 22-cue lyric source, frozen pause and 15-second MP4 export with existing phone UI. No JS or effect render errors captured. Timed lyric source was connected; a readable lyric frame remains a targeted follow-up before publication.
+- Nine core assertions passed, including all 120 shape/material pairs. Node syntax, build, and whitespace checks passed. Build now writes both root HTML entry points from source, eliminating stale index output. Legacy punch renderer retained as inactive reference.
+- Visual review corrected offline CJK weight to the existing local Songti Light and made the first rain cycle start from pasted chip positions. Personal audio, demo movies, system fonts and local runtime are not added to the publish payload.
+- Local review only. No push, PR, merge or deployment; waiting for the user's visual approval.
+
 # Design QA · Text wrap effect
 
 ## 2026-09-21 · Signal poster single-image prototype
@@ -244,3 +279,17 @@ final result: passed
 - 新增四种字体样式、三种排版颗粒度，以及自动反差、图片深色、图片亮色、图片代表色、经典黑白和手动颜色共七种颜色模式。
 - 默认字符间距由 `23` 调整为 `27`、覆盖度由 `0.26` 调整为 `0.18`，减少画面拥挤。
 - 发布默认值进一步调整为字符覆盖 `0.10`、颜色模式「图片代表色」。
+
+
+## 2026-09-21 · 上下打孔音乐动效 · Revision 04（源码 PR，暂不合并）
+
+- 功能范围：`punchSymbols` 的图像/歌曲搭配、矢量打孔、材质取色、分阶段隔拍动效、素材与示例入口、9:16 导出。使用独立分支 `feature/punch-music-refine` 和一个专属 PR；不混入其他独立功能，不更新网站仓库。
+- 用户最终反馈：移除 City sky、Mountain air 以及四张否决的生成图，保留 26 张精选用户照片及其缩略图，原素材库 58 张保留，总计 84 张。背景材质、蒙版、过程图与重复导出不进入前台。
+- 新规则：明显的美拉德/棕咖/驼色秋冬搭配可选落叶，明显粉色衣服或整体粉色调可选花瓣，不再要求画面存在树或花。像素色调规则独立运行，重复花叶保护继续生效。14 组示例用原始照片、英文文案，8 自动 / 6 形状示范；咖啡落叶采用用户参考图对应的无贴纸原图。
+- 隔拍：开场仍按原拍点分批打孔和贴片；后续队形、翼姿、星星明暗/缩放、便利贴、小花、小树、雨滴落地散开统一使用同一隔拍时钟。花瓣/落叶隔拍分批释放，连续翻转下降，前一次下落结束后才能在下一个分组拍点重新释放。
+- 真实浏览器检查：14 个示例覆盖 12 形状；84 张清单 / 26 张新增照片的 52 个图片 URL 均通过；抽屉不挡预览、手动裁切、英文可选字幕、播放暂停、效果切换、15 秒导出均通过。页面无脚本错误或本地资源错误。
+- 静态环境：关闭本机 API 后，源码页面正常使用仓库 unhappy，四张穿搭示例按色调自动匹配。内置照片使用预分析画面信息而非固定形状；新上传图片保留即时色调与浏览器识别。
+- 验证：18 项画布/规则回归通过；包含所有形状材质组合、无留边裁切、跨半幅下落、连续队形及统一隔拍事件。14 段离线示例和 1 段真实浏览器导出完整解码通过，均 H.264/AAC、1080×1920。
+- 提交检查：源码语法、`python3 src/build.py`、生成入口一致性和 `git diff --check` 通过。提交前 fetch 确认 origin/main 为 f8cc7b9，无新增上游提交。Reality/Touch、审片视频、本机字体/模型运行时均不入库。
+
+- 四张最终穿搭原图重新走纯浏览器 CLIP（绕过预分析素材）：窗边咖啡 → leaf；粉衣咖啡侧坐 / 正坐、海边粉衣双人 → petal。未填写提示词、未指定形状，检查通过。

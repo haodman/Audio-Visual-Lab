@@ -964,90 +964,7 @@ const FX = {
       ctx.restore(); dropFlash(f, p); }
   },
 
-  punchSymbols: { name:'图形镂空',icon:'🔘',desc:'照片剪纸 · 上下正负形',hint:'上下图形位置与取样一一对应，一次只显示一种字符。重音到来时随机选 2–4 个图形同步放大、柔和回落；重音放大设为 0 可关闭。暂停时定格。',
-    params:[Sel('shape','字符预设',['✦','★','●','♥','✳','自定义'],'★'),T('glyph','自定义字符','✦'),R('count','图形数量',6,24,16,1),R('size','图形大小',18,64,25,1),R('pulse','节奏幅度',0,1,1),R('accent','重音放大',0,2,1),Sel('paper','底纸质感',['细织纹','纯色'],'细织纹'),Sel('tone','底纸深浅',['深色','浅色'],'深色'),Sel('ground','底色来源',['照片取色','自选颜色'],'照片取色'),C('col','自选底色','#dbe2e7'),D('drv','beat',['beat','kick','snare'])],state:{},
-    draw(f,p,t){const s=this.state,e=editorialBeat(s,f,p,t),half=H/2,photo=splitFrame();
-      const raw=(p.shape==='自定义'?p.glyph:p.shape).trim()||'✦';
-      const glyph=typeof Intl.Segmenter==='function'?[...new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(raw)][0].segment:Array.from(raw)[0];
-      if(s.groundSource!==S.srcKey){
-        const sample=document.createElement('canvas');sample.width=sample.height=20;
-        const sg=sample.getContext('2d',{willReadFrequently:true});sg.drawImage(photo,0,0,20,20);
-        const pixels=sg.getImageData(0,0,20,20).data,bins=Array.from({length:24},()=>({w:0,x:0,y:0,s:0}));
-        // Find a representative chromatic family; averaging all RGB washes it gray.
-        for(let i=0;i<pixels.length;i+=4){
-          const r=pixels[i]/255,g=pixels[i+1]/255,b=pixels[i+2]/255,hi=Math.max(r,g,b),lo=Math.min(r,g,b),d=hi-lo,l=(hi+lo)/2;
-          if(d<.06||l<.08||l>.94)continue;
-          const sat=d/(1-Math.abs(2*l-1)),h=((hi===r?(g-b)/d:hi===g?(b-r)/d+2:(r-g)/d+4)*60+360)%360;
-          const px=(i/4)%20,py=Math.floor(i/80),center=1+3*Math.exp(-((px-10)**2+(py-11)**2)/35);
-          const w=sat*sat*(.4+Math.sin(l*Math.PI))*center,bin=bins[Math.floor(h/15)];
-          bin.w+=w;bin.x+=Math.cos(h*Math.PI/180)*w;bin.y+=Math.sin(h*Math.PI/180)*w;bin.s+=sat*w;
-        }
-        const families=bins.map((bin,i)=>[bins[(i+23)%24],bin,bins[(i+1)%24]].reduce((a,b)=>({w:a.w+b.w,x:a.x+b.x,y:a.y+b.y,s:a.s+b.s}),{w:0,x:0,y:0,s:0}));
-        const best=families.reduce((a,b)=>a.w>b.w?a:b);
-        s.paperHue=best.w?(Math.atan2(best.y,best.x)*180/Math.PI+360)%360:35;
-        s.paperSat=best.w?clamp(best.s/best.w*65,24,62):8;
-        s.groundSource=S.srcKey;
-      }
-      const bg=p.ground==='自选颜色'?p.col:`hsl(${s.paperHue} ${s.paperSat}% ${p.tone==='浅色'?76:27}%)`;
-      if(!s.weaveImage){s.weaveImage=new Image();s.weaveImage.src='src/textures/punch-weave-reference.png';}
-      if(!s.weave&&s.weaveImage.complete&&s.weaveImage.naturalWidth){
-        s.weave=document.createElement('canvas');s.weave.width=s.weave.height=120;
-        const wg=s.weave.getContext('2d',{willReadFrequently:true});
-        // Real textile from the reference's empty top-left region, no silhouettes/text.
-        wg.drawImage(s.weaveImage,24,24,240,240,0,0,120,120);
-        const data=wg.getImageData(0,0,120,120);
-        for(let i=0;i<data.data.length;i+=4){const v=data.data[i]*.2126+data.data[i+1]*.7152+data.data[i+2]*.0722;data.data[i]=data.data[i+1]=data.data[i+2]=v>90?255:0;data.data[i+3]=Math.min(38,Math.abs(v-90)*.65);}
-        wg.putImageData(data,0,0);
-      }
-      if(!s.paper){s.paper=document.createElement('canvas');s.paper.width=W;s.paper.height=half;}
-      const pg=s.paper.getContext('2d');pg.fillStyle=bg;pg.fillRect(0,0,W,half);
-      if(p.paper==='细织纹'&&s.weave){pg.fillStyle=pg.createPattern(s.weave,'repeat');pg.fillRect(0,0,W,half);}
-      ctx.drawImage(s.paper,0,0);ctx.drawImage(photo,0,half);
-      if(!s.tile){s.tile=document.createElement('canvas');s.tile.width=s.tile.height=384;}
-      const g=s.tile.getContext('2d'),n=p.count;
-      if(s.points?.length!==n||s.pointSource!==S.srcKey){
-        s.pointSource=S.srcKey;s.points=[];
-        // Generate once per photo/count change, never once per animation frame.
-        for(let i=0;i<n;i++){
-          let best=null,bestDistance=-1;
-          for(let k=0;k<80;k++){
-            const q={x:W*(.10+.80*Math.random()),y:half*(.12+.76*Math.random())};
-            const distance=s.points.reduce((d,a)=>Math.min(d,Math.hypot(a.x-q.x,a.y-q.y)),Infinity);
-            if(distance>bestDistance){best=q;bestDistance=distance;}
-          }
-          s.points.push({...best,seed:Math.random()});
-        }
-      }
-      // Pick a stable random subset only on a real accent edge, never every frame.
-      const accent=Math.max(f.kick||0,f.snare||0,f.drop||0);
-      if(S.playing&&accent>.58&&(s.previousAccent||0)<=.58&&s.clock-(s.accentBorn??-99)>.22){
-        s.accentBorn=s.clock;
-        const pool=Array.from({length:n},(_,i)=>i),selected=new Set();
-        const count=Math.min(n,2+Math.floor(Math.random()*3));
-        for(let k=0;k<count;k++){const j=Math.floor(Math.random()*pool.length);selected.add(pool.splice(j,1)[0]);}
-        for(let i=0;i<n;i++)s.points[i].accent=selected.has(i)?accent:0;
-      }
-      if(S.playing)s.previousAccent=accent;
-      const accentEnvelope=Math.exp(-Math.max(0,s.clock-(s.accentBorn??-99))*6);
-      // Stable, spaced positions: one cutout has exactly one matching paper piece.
-      s.layout??=0;const target=Math.floor(s.step/4);
-      if(S.playing)s.layout+=(target-s.layout)*.035;
-      for(let i=0;i<n;i++){
-        const seed=s.points[i].seed,angle=(seed-.5)*.3;
-        const {x,y}=s.points[i];
-        const active=i%4===s.step%4,beat=e.pulse*p.pulse*(active?1:.2);
-        const boost=(s.points[i].accent||0)*accentEnvelope*(p.accent??1)*p.pulse;
-        const size=p.size*(.88+seed*.24)*(1+beat*.15+boost*1.5);
-        const drift=Math.sin(s.layout*.9+i*2.4)*12*p.pulse;
-        const tx=x+drift,ty=y-beat*9;
-        g.clearRect(0,0,384,384);g.save();g.translate(192,192);g.rotate(angle);g.font=`600 ${size}px Georgia, "PingFang SC", serif`;g.textAlign='center';g.textBaseline='middle';g.fillStyle='#fff';g.fillText(glyph,0,0);g.restore();
-        g.globalCompositeOperation='source-in';g.drawImage(photo,192-tx,192-ty);g.globalCompositeOperation='source-over';
-        ctx.save();ctx.shadowColor='#18202b22';ctx.shadowBlur=1;ctx.shadowOffsetY=.6;ctx.drawImage(s.tile,tx-192,ty-192);ctx.restore();
-        g.clearRect(0,0,384,384);g.save();g.translate(192,192);g.rotate(angle);g.font=`600 ${size}px Georgia, "PingFang SC", serif`;g.textAlign='center';g.textBaseline='middle';g.fillStyle='#fff';g.fillText(glyph,0,0);g.restore();
-        g.globalCompositeOperation='source-in';g.drawImage(s.paper,192-tx,192-ty);g.globalCompositeOperation='source-over';
-        ctx.drawImage(s.tile,tx-192,half+ty-192);
-      }
-    } },
+  punchSymbols: createPunchStudioEffect(),
 
   rhythmPuzzle: createRhythmPuzzleEffect(),
 
@@ -1276,7 +1193,7 @@ const FX_CAPS = {
   dots: ['原色灯珠', '亮度尺寸映射', '节拍光浪'], mosaic: ['大块取景', '重音错位回弹', '照片自适应取色'], warhol: ['四种分镜布局', '等比例特写', '四拍换景'],
   ascii: ['原色字符成像', '歌词标题排印'], rain: ['无描边纯色字粒', '四种字体风格', '七种取色模式', '按列落位', '鼓点重组'], bars: ['实时 FFT', '连续曲线插值', '前后景声波海报'],
   hud: ['短标记自动分组', '曲线点阵网格', '流动高亮点', '双层湍流场', 'CH/QUERY 数据标注', '音乐位移波'], pixelReveal: ['细密原色采样', '局部砂粒位移', '鼓点扬起与回落'],
-  contourField: ['MODNet 主体蒙版', '蒙版膨胀/差集', '文字轮廓合并', '低频/节拍扩散'], textWrap: ['MODNet 主体外轮廓', '曲线字形排版', '弧长防重叠', '歌词时间轴', '鼓点重点词推进'], punchSymbols: ['单字符蒙版', '上下正负形', '同位置照片采样', '节拍轻弹'], rhythmPuzzle: ['九宫格裁切', '整行整列滑轨', '重音触发', '自动拼回完整图', '图片取色文案'], stretchBands: ['局部色彩采样', '横向像素延展', '主体分割保护', '节拍状态机'],
+  contourField: ['MODNet 主体蒙版', '蒙版膨胀/差集', '文字轮廓合并', '低频/节拍扩散'], textWrap: ['MODNet 主体外轮廓', '曲线字形排版', '弧长防重叠', '歌词时间轴', '鼓点重点词推进'], punchSymbols: ['画面与歌曲选形', '照片主色取色', '十种背景质感', '实测拍点分批打孔', '异位聚集', '自然下落'], rhythmPuzzle: ['九宫格裁切', '整行整列滑轨', '重音触发', '自动拼回完整图', '图片取色文案'], stretchBands: ['局部色彩采样', '横向像素延展', '主体分割保护', '节拍状态机'],
   subjectSplit: ['实时主体分割', '前景/背景分层', '图片取色', '轮廓文字填充', '高低频/节拍驱动']
 };
 
@@ -1347,7 +1264,7 @@ $('#tl').addEventListener('click', e => { if (!S.buffer) return; const r = e.cur
 /* =====================================================================
    7. UI
    ===================================================================== */
-function selectFx(id) { S.fx = id; document.querySelectorAll('#fxlist button, #originalCompare button').forEach(b => b.classList.toggle('on', b.dataset.id === id)); $('#fxname').textContent = FX[id].name + ' · ' + FX[id].desc; const caps = FX_CAPS[id] || []; $('#fxhint').textContent = (FX[id].hint || '') + (caps.length ? '\n技术能力：' + caps.join(' · ') : ''); buildParams();
+function selectFx(id) { S.fx = id; $('#punchExampleBtn').hidden=id!=='punchSymbols'; if(id === 'punchSymbols'){FX[id].state.origin=songTime();FX[id].state.key=null;} document.querySelectorAll('#fxlist button, #originalCompare button').forEach(b => b.classList.toggle('on', b.dataset.id === id)); $('#fxname').textContent = FX[id].name + ' · ' + FX[id].desc; const caps = FX_CAPS[id] || []; $('#fxhint').textContent = (FX[id].hint || '') + (caps.length ? '\n技术能力：' + caps.join(' · ') : ''); buildParams();
   if (id === 'subjectSplit') { setSeg(S.isVideo ? '实时视频抠像 · 启动中…' : 'MODNet 高清抠像 · 启动中…', 'working'); setTimeout(() => S.isVideo ? refineSubject() : refineSubjectHQ('split'), 20); }
   else if (!S.isVideo && !S.cache.subjHQ && ['punchSymbols', 'bars', 'stretchBands', 'contourField', 'textWrap'].includes(id)) { setSeg('MODNet 高清抠像 · 启动中…', 'working'); setTimeout(() => refineSubjectHQ('full'), 20); }
 }
@@ -1369,7 +1286,7 @@ function buildEffectCopy() {
   box.appendChild(source);
   if (vals.copy === '自定义文字') {
     const input = document.createElement('input'); input.type = 'text'; input.value = vals.text;
-    input.setAttribute('aria-label', '效果自定义文字'); input.placeholder = '输入文字，用 / 分隔短句';
+    input.setAttribute('aria-label', '效果自定义文字'); input.placeholder = id==='punchSymbols'?'Add a line, or leave it empty.':'输入文字，用 / 分隔短句';
     input.oninput = () => { vals.text = input.value; invalidateTextEffect(id); }; box.appendChild(input);
   } else {
     const status = document.createElement('div'); status.className = 'copy-status';
@@ -1386,7 +1303,7 @@ function buildParams() {
     if (d.type === 'range') { const inp = document.createElement('input'); inp.type = 'range'; inp.min = d.min; inp.max = d.max; inp.step = d.step; inp.value = vals[d.key]; const v = document.createElement('div'); v.className = 'v'; v.textContent = fmt(vals[d.key], d.step); inp.oninput = () => { vals[d.key] = +inp.value; v.textContent = fmt(+inp.value, d.step); if (d.key === 'pitch') delete S.cache['lum' + vals.pitch]; }; row.appendChild(inp); row.appendChild(v); }
     else if (d.type === 'text') { const inp = document.createElement('input'); inp.type = 'text'; inp.value = vals[d.key]; inp.placeholder = '用 / 或逗号分隔'; inp.style.gridColumn = '2/4'; inp.className = 'txt'; inp.oninput = () => vals[d.key] = inp.value; row.appendChild(inp); }
     else if (d.type === 'color') { const inp = document.createElement('input'); inp.type = 'color'; inp.value = vals[d.key]; inp.oninput = () => vals[d.key] = inp.value; row.appendChild(inp); row.appendChild(document.createElement('div')); }
-    else if (d.type === 'select') { const sel = document.createElement('select'); d.opts.forEach(o => { const op = document.createElement('option'); op.textContent = o; op.value = o; op.selected = vals[d.key] === o; sel.appendChild(op); }); sel.onchange = () => { vals[d.key] = sel.value; if (d.key === 'copy') invalidateTextEffect(S.fx); }; row.appendChild(sel); row.appendChild(document.createElement('div')); }
+    else if (d.type === 'select') { const sel = document.createElement('select'); d.opts.forEach(o => { const op = document.createElement('option'); op.textContent = o; op.value = o; op.selected = vals[d.key] === o; sel.appendChild(op); }); sel.onchange = () => { vals[d.key] = sel.value; if(S.fx==='punchSymbols'&&d.key==='example'){loadPunchExample(sel.value);return;} if (d.key === 'copy') invalidateTextEffect(S.fx); }; row.appendChild(sel); row.appendChild(document.createElement('div')); }
     else if (d.type === 'driver') { const wrap = document.createElement('div'); wrap.className = 'drv'; (d.only || Object.keys(DRIVERS)).forEach(k => { const c = document.createElement('button'); c.className = 'chip' + (vals[d.key] === k ? ' on' : ''); c.textContent = DRIVERS[k]; c.onclick = () => { vals[d.key] = k; wrap.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === c)); }; wrap.appendChild(c); }); row.appendChild(wrap); }
     box.appendChild(row); }
   const reset = document.createElement('button'); reset.className = 'chip param-reset'; reset.textContent = '恢复默认参数'; reset.onclick = () => { defs.forEach(d => vals[d.key] = d.def); buildParams(); }; box.appendChild(reset);
@@ -1475,6 +1392,7 @@ function setPanelFocus(panel) {
   $('#materialFold').textContent = effectsOpen ? '展开' : '收起';
   $('#materialFold').setAttribute('aria-expanded', String(!effectsOpen));
 }
+$('#punchExampleBtn').onclick=()=>{openSheet('params');$('#params .p-example select')?.focus();};
 $('#effectFold').onclick = () => setPanelFocus($('#effectCard').classList.contains('expanded') ? 'material' : 'effects');
 $('#materialFold').onclick = () => setPanelFocus($('#materialCard').classList.contains('expanded') ? 'effects' : 'material');
 
@@ -1514,11 +1432,16 @@ async function exportPreviewVideo(seconds = 15) {
   if (!S.buffer) { openSheet('tracks'); toast('先选择一首音乐'); return; }
   if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) { toast('当前浏览器不支持视频导出'); return; }
   setupGraph(); await ac().resume();
-  const startAt = songTime(); play(startAt);
-  const out = document.createElement('canvas'); out.width = 780; out.height = 1688;
+  const startAt = songTime(),punchExport=S.fx==='punchSymbols';
+  if(punchExport){FX.punchSymbols.state.origin=startAt;FX.punchSymbols.state.key=null;}
+  if(!punchExport)play(startAt);
+  const out = document.createElement('canvas'); out.width = punchExport?1080:780; out.height = punchExport?1920:1688;
+  const punchCopy=punchExport?S.params.punchSymbols.copy:null,punchText=punchExport?S.params.punchSymbols.text:'';
+  const punchRenderer=punchExport?PunchStudio.makeRenderer(out.getContext('2d'),S.media||splitFrame(),(w,h)=>Object.assign(document.createElement('canvas'),{width:w,height:h}),{...FX.punchSymbols.state.renderer.config,offset:startAt,duration:seconds}):null;
+  if(punchRenderer)punchRenderer.render(0,punchCopy==='自动歌词'?lyricAt(startAt):punchText);
   const stream = out.captureStream(30);
   const audioTrack = recordDest?.stream.getAudioTracks()[0]; if (audioTrack) stream.addTrack(audioTrack);
-  const choices = ['video/mp4;codecs=h264,aac', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+  const choices = [...(punchExport?['video/mp4;codecs=avc1.42001f,mp4a.40.2']:[]),'video/mp4;codecs=h264,aac', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
   const mimeType = choices.find(x => MediaRecorder.isTypeSupported(x)) || '';
   let recorder;
   try { recorder = new MediaRecorder(stream, mimeType ? { mimeType, videoBitsPerSecond: 6000000 } : { videoBitsPerSecond: 6000000 }); }
@@ -1539,9 +1462,10 @@ async function exportPreviewVideo(seconds = 15) {
     status.textContent = '导出完成'; toast(`已导出 15 秒 ${ext.toUpperCase()} 视频`);
   };
   recorder.start(500);
+  if(punchExport)play(startAt);
   (function paint() {
     if (!exporting) return;
-    drawPhoneExport(out);
+    if(punchRenderer)punchRenderer.render(Math.max(0,songTime()-startAt),punchCopy==='自动歌词'?lyricAt(songTime()):punchText);else drawPhoneExport(out);
     const left = Math.max(0, seconds - (performance.now() - started) / 1000);
     status.textContent = `正在导出 · ${left.toFixed(1)}s`;
     requestAnimationFrame(paint);
@@ -1558,10 +1482,10 @@ $('#vol').oninput = e => { if (gainNode) gainNode.gain.value = +e.target.value; 
 document.addEventListener('keydown', e => { if (e.code === 'Space' && e.target.tagName !== 'INPUT') { e.preventDefault(); S.playing ? pause() : play(S.pausedAt || 0); } });
 
 /* ---------- photos ---------- */
-const TAGS = ['全部', '横图', '竖图', '本地', '自拍', '半身', '全身', '双人', '多人', '户外', '室内', '夜景'];
+const TAGS = ['全部', 'MDP 照片', 'MDP 示例', '横图', '竖图', '本地', '自拍', '半身', '全身', '双人', '多人', '户外', '室内', '夜景'];
 let curTag = '全部', galleryLimit = 24;
 function presetMatches(d) { return curTag === '全部' || d.tags.includes(curTag); }
-function presetButton(d, i) { const b = document.createElement('button'); b.dataset.i = i; b.dataset.tags = d.tags.join(','); const img = new Image(); img.loading = 'lazy'; img.decoding = 'async'; img.src = d.thumb || d.src; img.alt = d.name; b.appendChild(img);
+function presetButton(d, i) { const b = document.createElement('button'); b.classList.toggle('on',i===S.photoIdx); b.dataset.i = i; b.dataset.tags = d.tags.join(','); const img = new Image(); img.loading = 'lazy'; img.decoding = 'async'; img.src = d.thumb || d.src; img.alt = d.name; b.appendChild(img);
   if (d.isVideo) { const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = '视频'; b.appendChild(tag); }
   const n = document.createElement('div'); n.className = 'n'; n.innerHTML = d.name + '<small>' + d.tags.join(' · ') + '</small>'; b.appendChild(n); b.onclick = () => selectPhoto(i); return b; }
 function renderGallery(reset = false) { const box = $('#photos'); if (reset) { galleryLimit = 24; box.scrollTop = 0; }
@@ -1671,10 +1595,11 @@ function fitPhone() {
 }
 addEventListener('resize', fitPhone); fitPhone();
 /* ---------- boot ---------- */
-buildFxList(); buildTracks(); buildPhotos(); selectPhoto(0); selectFx('subjectSplit'); drawTimeline(0); frame(); addEventListener('load', async () => { try { await restoreLibrary(); } catch (e) { }
+buildFxList(); buildTracks(); buildPhotos(); selectPhoto(0); selectFx(new URLSearchParams(location.search).get('effect')==='punchSymbols'?'punchSymbols':'subjectSplit'); drawTimeline(0); frame(); addEventListener('load', async () => { try { await restoreLibrary(); } catch (e) { }
   const mf = new URLSearchParams(location.search).get('manifest') || window.MFX_MANIFEST; if (mf) await loadManifest(mf);
   const testPool = [...PACK_TRACKS, ...REMOTE_TRACKS, ...LIB.music], pool = testPool.length ? testPool : TRACKS;
-  const initialTrack = pool[Math.floor(Math.random() * pool.length)]; if (initialTrack) setTimeout(() => loadTrack(initialTrack), 180);
+  const requestedExample=new URLSearchParams(location.search).get('demo');
+  if(requestedExample&&PUNCH_EXAMPLES.some(d=>d.id===requestedExample)){await loadPunchExample(requestedExample);}else{const initialTrack=pool[Math.floor(Math.random()*pool.length)];if(initialTrack)setTimeout(()=>loadTrack(initialTrack),180);}
 });
 // Chrome may suspend audible autoplay until the first user gesture. The source
 // is already prepared, so the first pointer/key interaction resumes it instantly.
