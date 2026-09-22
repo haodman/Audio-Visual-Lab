@@ -215,9 +215,9 @@ CDN 需要开 CORS。也可以在页面里设 `window.MFX_MANIFEST = '...'`。
 
 ## 9. 动态时钟（dynamicClock）
 
-One full-frame **动态时钟** effect remains under `src/mdp/`. The outer white contour flows with smoothed real audio energy, bass and transient detail; its motion slows and settles in silence. Resting coverage is 95% of both frame dimensions and deformation stays inside those bounds. Outline depth is adjustable without changing word/hand timing.
+One full-frame **动态时钟** effect remains under `src/mdp/`. The outer white contour stretches horizontally, vertically and in traveling bends with smoothed real audio energy, bass and transient detail; its motion slows and settles in silence. Resting coverage is 95% of both frame dimensions and deformation stays inside those bounds. Stretch depth is adjustable. Words follow the same deformed curve while remaining upright; the hand follows the moving active word without changing beat selection.
 
-The white hand and active word share exact geometry and measured onset events. Default pacing is one verified beat per word, including fast 186 BPM material; the hand moves for 85ms, settles for 35ms, then holds. Words support custom copy or timed lyrics and soft colors, photo accents, white or manual ink. White strokes retain a soft dark shadow.
+The white hand and active word share exact geometry and measured onset events. Default pacing is one verified beat per word, including fast 186 BPM material; the hand moves for 85ms, settles for 35ms, then follows the same moving word until the next event. Words support custom copy or timed lyrics and soft colors, photo accents, white or manual ink. White strokes retain a soft dark shadow.
 
 The candle/sunshine renderer and semantic image-matching worker are removed. Every photo keeps the clock, without an additional recognition model or foreground checks. The approved birthday photograph remains in Materials; unapproved review photos remain outside git. Read [`src/mdp/README.md`](src/mdp/README.md) and the English [`src/mdp/MOTION-RULES.md`](src/mdp/MOTION-RULES.md).
 

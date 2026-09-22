@@ -6,17 +6,17 @@ One effect named 动态时钟. Every photo uses the same full-frame clock. The f
 
 **Scope:** One full-frame clock for any photo. Selecting another photo keeps this effect active.
 
-The resting outline covers 95% of each frame dimension. The white hand and words keep shared target positions; only the outer outline flows with the audio.
+The resting outline covers 95% of each frame dimension. The outline stretches in multiple directions. Words follow the same deforming contour and the white hand follows its moving target.
 
-**Motion / stability:** The hand advances on measured audio beats, moves for 85ms, settles for 35ms, then holds. One beat per word is the default, with two/four-beat options.
+**Motion / stability:** The hand advances on measured audio beats, moves for 85ms, settles for 35ms, then follows that word until the next event. One beat per word is the default, with two/four-beat options.
 
 ## Flowing audio outline
 
 **Scope:** Measured full-band energy, bass and transient detail shape the outer white contour.
 
-WebAudio reads the decoded PCM at 100Hz. Normalize by track energy, then smooth attack/release over 120/460ms (energy), 160/580ms (bass) and 180/380ms (detail), followed by a 90ms smoothing stage. Broad three-lobe and two-lobe curves carry most movement; fine detail stays restrained. Movement travels according to accumulated audio energy, never a free-running timer.
+WebAudio reads the decoded PCM at 100Hz. Normalize by track energy, then smooth attack/release over 120/460ms (energy), 160/580ms (bass) and 180/380ms (detail), followed by a 120ms smoothing stage. Independent horizontal/vertical stretch, traveling bends and broad radial waves carry the movement; fine detail stays restrained. Movement travels according to accumulated audio energy, never a free-running timer.
 
-**Motion / stability:** Deformation is inward only, up to 6.8% of the local radius at default depth, preserving the outer safety margin. Quiet passages relax toward the resting shape; silence settles to rest. Pause, seek and export use identical song-time samples. Outline depth changes the contour only, not hand timing or word positions.
+**Motion / stability:** Default radial variation reaches 27.2% at peak input, with up to 12% independent horizontal/vertical stretch and traveling angular bends. The shape alternates between compression and extension inside the full-frame safety margin. Quiet passages relax toward the resting shape; silence settles to rest. Pause, seek and export use identical song-time samples. Stretch depth moves both the contour and the words. The hand recomputes its angle and length from the moving active word each frame; beat selection stays unchanged.
 
 ## White clock and word colors
 
@@ -38,11 +38,11 @@ Compare four grid phases every 16 beats and favor stronger actual hits. Preserve
 
 Full-band and bass RMS are normalized against their 95th-percentile track energy, with small absolute noise floors. Positive full-band/bass flux supplies a restrained detail channel. Two causal smoothing stages give a rounded attack and longer release. The renderer interpolates the 100Hz envelopes at the precise song timestamp. Curve travel integrates smoothed energy and bass; it slows and settles as sound disappears. Silent PCM generates no movement. No wall-clock oscillation or simulated beat grid drives the contour.
 
-The contour combines broad periodic three-lobe and two-lobe shapes with a small five-lobe detail. Each component is spatially closed, so the seam stays continuous. Deformation moves inward from the resting 95% outline, preserving safe margins at maximum depth. At default depth, the upper bound is 6.8% of each point’s local radius; the depth control ranges from zero (static outline) to 1.5. The central hand and word positions stay stable while the outside contour changes.
+The contour combines independent horizontal and vertical stretch, angular bends, broad three-lobe/two-lobe radial waves, and restrained five-lobe detail. Each component is spatially closed, so the seam stays continuous. At default depth, peak input permits up to 27.2% radial variation and up to 12% independent axis stretch, with angular bends up to 0.195 radians. The shape alternates between compression and extension while remaining within the resting 95% frame boundary. The depth control ranges from zero (resting geometry) to 1.5. Every word samples the same deformed contour and stays upright for readability. Both previous and current hand targets are recalculated from these moving word positions, so the hand keeps pointing to the active word between beat events.
 
 ## Words, hand and color
 
-Custom copy groups into at most twelve labels without dropping words. The hand angle and length come from the active label; its tip stops before the text. Each step uses 85ms ease-out with 3.5% angular overshoot, 35ms settling, then holds. The outline uses separate smooth audio envelopes instead of these sharp beat pulses.
+Custom copy groups into at most twelve labels without dropping words. The hand angle and length come from the active label; its tip stops before the text. Each step uses 85ms ease-out with 3.5% angular overshoot, 35ms settling, then follows the current moving word until the next beat event. The outline and word positions use separate smooth audio envelopes instead of these sharp beat pulses.
 
 Timed lyrics occupy eight persistent slots. Existing word times are used when available; line-only lyrics are divided into approximate groups. Groups snap to actual detected beats. This is not forced word alignment and does not guarantee perfect transcription for every song.
 

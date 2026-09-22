@@ -18,8 +18,8 @@ function buffer(data,sr=12000){return{length:data.length,sampleRate:sr,numberOfC
   }
   previous=p;
  }
- assert.ok(maximumStep<1.8,`no contour jumps at 60fps: ${maximumStep}`);
- assert.ok(maximumAcceleration<.4,`no abrupt velocity changes: ${maximumAcceleration}`);
+ assert.ok(maximumStep<960*.008,`no contour jumps at 60fps: ${maximumStep}`);
+ assert.ok(maximumAcceleration<2,`no abrupt velocity changes: ${maximumAcceleration}`);
  const signal=R.contourAt(a,5),b=C.bounds;
  for(let phase=0;phase<10;phase+=.37)for(let i=0;i<360;i++){
   const angle=i*Math.PI*2/360,p=C.flowingOutline(angle,{...signal,travel:phase},1.5);
@@ -28,6 +28,30 @@ function buffer(data,sr=12000){return{length:data.length,sampleRate:sr,numberOfC
  }
  const time=4.125,expected=points(time);points(12);points(1);assert.deepEqual(points(time),expected,'arbitrary seeks reproduce the same contour');
  const cfg={words:['Move','with','the','music'],rhythm:{index:3,age:.2,pulse:.2}};
- assert.deepEqual(C.stateAt(time,{...cfg,contour:signal,outlineDepth:1.5}),C.stateAt(time,{...cfg,contour:signal,outlineDepth:0}),'outline changes cannot move the paired word/hand targets');
- console.log('PASS: audio-dependent contour, silent rest, deterministic seek, safe frame bounds, stable word/hand geometry.',{maximumStep,maximumAcceleration});
+ const moving=C.stateAt(time,{...cfg,contour:signal,outlineDepth:1}),rest=C.stateAt(time,{...cfg,contour:signal,outlineDepth:0});
+ assert.notDeepEqual(moving.positions,rest.positions,'words must follow the stretched contour');
+ assert.equal(moving.index,rest.index,'stretch does not change beat/word selection');
+ const tracks=Array.from({length:6},()=>[]),widths=[],heights=[];
+ for(let k=0;k<300;k++){
+  const contour={energy:.8,bass:.75,detail:.1,travel:k*.08};
+  const state=C.stateAt(time,{...cfg,words:['Keep','a','little','wonder','with','you'],contour});
+  assert.deepEqual(state.target,state.positions[state.index],'hand and label share the moving endpoint');
+  assert.ok(Math.abs(state.angle-Math.atan2(state.target.y,state.target.x))<1e-9,'settled hand follows moving word angle');
+  assert.ok(Math.abs(state.distance-Math.hypot(state.target.x,state.target.y))<1e-9,'hand length follows moving word radius');
+  for(let j=0;j<6;j++)tracks[j].push(state.positions[j]);
+  const rim=Array.from({length:180},(_,j)=>C.flowingOutline(j*Math.PI*2/180,contour));
+  widths.push((Math.max(...rim.map(p=>p.x))-Math.min(...rim.map(p=>p.x)))*f.sx);
+  heights.push((Math.max(...rim.map(p=>p.y))-Math.min(...rim.map(p=>p.y)))*f.sy);
+ }
+ const travels=tracks.map(pts=>Math.hypot((Math.max(...pts.map(p=>p.x))-Math.min(...pts.map(p=>p.x)))*f.sx,(Math.max(...pts.map(p=>p.y))-Math.min(...pts.map(p=>p.y)))*f.sy));
+ assert.ok(travels.every(v=>v>35),'every default word must move visibly, including top and bottom');
+ assert.ok(Math.max(...widths)-Math.min(...widths)>35,'width stretches visibly');
+ assert.ok(Math.max(...heights)-Math.min(...heights)>55,'height stretches visibly');
+ for(let frame=0;frame<60;frame++){
+  const contour=R.contourAt(a,4+frame/60),c={...cfg,textMode:'auto',beatTimes:[.5,1,1.5,2,2.5,3,3.5,4],contour};
+  const state=C.stateAt(4.2+frame/60,c,[{time:0,end:3.8,text:'Words travel with the changing wave'}]);
+  assert.deepEqual(state.target,state.positions[state.index]);assert.ok(Math.abs(state.angle-state.targetAngle)<1e-9,'lyric hand follows its deformed label');
+ }
+ console.log('Visible displacement (canvas pixels):',{words:travels,widthRange:Math.max(...widths)-Math.min(...widths),heightRange:Math.max(...heights)-Math.min(...heights)});
+ console.log('PASS: audio-dependent contour, silent rest, deterministic seek, safe frame bounds, moving word/hand targeting and multidirectional stretching.',{maximumStep,maximumAcceleration});
 })().catch(e=>{console.error(e);process.exitCode=1});

@@ -4,16 +4,21 @@ window.LyricClock=(()=>{
  const palette=['#ffe28a','#97eed4','#ffb3cb','#aee9ff','#dab7ff','#ffd19c','#c5f09a','#f6a3b0'];
  const timelineCache=new WeakMap();
  function outline(a){const r=1+.10*Math.sin(3*a+.7)+.05*Math.cos(5*a-.4)+.013*Math.sin(7*a+1.1);return{x:354*Math.cos(a)*r,y:652*Math.sin(a)*r};}
- // Only the outer contour flows. Shared hand/word geometry stays steady.
- // Inward deformation preserves the resting outline's 2.5% frame margins.
+ // Directional stretching and traveling bends share one geometry with the words.
+ // Positive axis/radial scales keep the contour inside the full-frame margin.
  function flowingOutline(a,signal={},depth=1){
-  const p=outline(a),energy=clamp(signal.energy||0),bass=clamp(signal.bass||0),detail=clamp(signal.detail||0),phase=signal.travel||0;
-  const inset=clamp(depth,0,1.5)*(.008*energy+.032*energy*(.5+.5*Math.sin(3*a+phase))+.020*bass*(.5+.5*Math.cos(2*a-phase*.66+.7))+.008*detail*(.5+.5*Math.sin(5*a+phase*.43-.4)));
-  return {x:p.x*(1-inset),y:p.y*(1-inset)};
+  const d=clamp(depth,0,1.5),energy=clamp(signal.energy||0),bass=clamp(signal.bass||0),detail=clamp(signal.detail||0),phase=signal.travel||0;
+  if(!d||!energy&&!bass&&!detail)return outline(a);
+  const bend=d*(.14*energy*Math.sin(2*a+phase*.72)+.055*bass*Math.sin(3*a-phase*.46+.4));
+  const p=outline(a+bend);
+  const radius=1-d*(.01*energy+.16*energy*(.5+.5*Math.sin(3*a+phase*.70))+.09*bass*(.5+.5*Math.cos(2*a-phase*.61))+.012*detail*(.5+.5*Math.sin(5*a+phase*.43-.4)));
+  const stretchX=1-d*.12*energy*(.5+.5*Math.sin(phase*.84));
+  const stretchY=1-d*.12*bass*(.5+.5*Math.cos(phase*.71+.6));
+  return {x:p.x*radius*stretchX,y:p.y*radius*stretchY};
  }
  const bounds=(()=>{let xmin=Infinity,xmax=-Infinity,ymin=Infinity,ymax=-Infinity;for(let j=0;j<1440;j++){const p=outline(j*TAU/1440);xmin=Math.min(xmin,p.x);xmax=Math.max(xmax,p.x);ymin=Math.min(ymin,p.y);ymax=Math.max(ymax,p.y);}return{xmin,xmax,ymin,ymax,cx:(xmin+xmax)/2,cy:(ymin+ymax)/2};})();
  function layout(width,height){const margin=.025;return{x:width/2,y:height/2,sx:width*(1-2*margin)/(bounds.xmax-bounds.xmin),sy:height*(1-2*margin)/(bounds.ymax-bounds.ymin),cx:bounds.cx,cy:bounds.cy,coverage:.95};}
- function point(index,count){const p=outline(-Math.PI/2+TAU*index/Math.max(1,count));return{x:p.x*.76,y:p.y*.80};}
+ function point(index,count,signal,depth=1){const p=flowingOutline(-Math.PI/2+TAU*index/Math.max(1,count),signal,depth);return{x:p.x*.76,y:p.y*.80};}
  function fitWords(words,max=12){const out=[];for(let i=0;i<Math.min(words.length,max);i++){const a=Math.floor(i*words.length/Math.min(words.length,max)),b=Math.floor((i+1)*words.length/Math.min(words.length,max));out.push(words.slice(a,b).join(' '));}return out;}
  function nextBeat(beats,t){let lo=0,hi=beats.length;while(lo<hi){const mid=(lo+hi)>>1;if(beats[mid]<t)lo=mid+1;else hi=mid;}return lo<beats.length?beats[lo]:null;}
  function timeline(cues,beats=[]){
@@ -49,8 +54,9 @@ window.LyricClock=(()=>{
    const startsWord=q.index>=0&&q.index%stride===0;advance=event>0&&startsWord&&index!==previousIndex;phase=advance?settle(q.age):1;eventTime=startsWord?t-q.age:null;
    if(!advance)previousIndex=index;
   }
-  const target=point(index,slotCount),previous=point(previousIndex,slotCount),hand=handBetween(previous,target,phase,advance);
-  return{labels,index,previousIndex,slotCount,target,previous,phase,advance,turn,eventTime,lyric,pulse:q.pulse||0,...hand};
+  const positions=Array.from({length:slotCount},(_,j)=>point(j,slotCount,c.contour,c.outlineDepth??1));
+  const target=positions[index],previous=positions[previousIndex],hand=handBetween(previous,target,phase,advance);
+  return{labels,positions,index,previousIndex,slotCount,target,previous,phase,advance,turn,eventTime,lyric,pulse:q.pulse||0,...hand};
  }
  function handAt(t,c,cues=[]){return stateAt(t,c,Array.isArray(cues)?cues:[]);}
  function textColors(c){return c.textStyle==='White'?['#ffffff']:c.textStyle==='Manual'?[c.textInk||'#ffe28a']:c.textStyle==='Photo accents'?(c.palette||palette):palette;}
@@ -63,7 +69,7 @@ window.LyricClock=(()=>{
   let targetHalfWidth=25,targetHalfHeight=22;
   for(let j=0;j<state.labels.length;j++){
    const label=state.labels[j];if(!label||c.textMode==='none')continue;
-   const pos=point(j,state.slotCount),selected=j===state.index,color=colors[mod(j+state.turn,colors.length)],fontSize=state.slotCount>10?36:42;
+   const pos=state.positions[j],selected=j===state.index,color=colors[mod(j+state.turn,colors.length)],fontSize=state.slotCount>10?36:42;
    ctx.save();ctx.font=`${fontSize}px LatinHand,cursive`;
    const maxWidth=state.slotCount>8?142:182,measured=ctx.measureText(label.word).width,fit=Math.min(1,maxWidth/Math.max(1,measured)),scale=fit*(selected?activeScale:1);
    if(selected){targetHalfWidth=measured*scale/2;targetHalfHeight=fontSize*scale*.55;}
@@ -82,5 +88,5 @@ window.LyricClock=(()=>{
   return state;
  }
  function render(p,t,c,cues=[]){p.clear();const ctx=p.drawingContext,f=layout(p.width,p.height);ctx.save();ctx.translate(f.x,f.y);ctx.scale(f.sx,f.sy);ctx.translate(-f.cx,-f.cy);const state=draw(ctx,t,c,cues);ctx.restore();return{...state,layout:f};}
- return{draw,render,stateAt,handAt,timeline,point,outline,flowingOutline,bounds,layout,settle,palette,textColors,version:'2.0.0-dynamic-clock'};
+ return{draw,render,stateAt,handAt,timeline,point,outline,flowingOutline,bounds,layout,settle,palette,textColors,version:'2.1.0-stretching-clock'};
 })();

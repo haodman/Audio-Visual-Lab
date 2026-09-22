@@ -3,8 +3,8 @@ window.MDPClockUI=(()=>{
   let env;
   const state={clockState:null,appearance:null};
   function update(){
-    document.querySelector('#mdpStatus').textContent='Full-frame white clock · smooth audio-reactive outline';
-    document.querySelector('#mdpReason').textContent='The hand points to the highlighted word on each beat.';
+    document.querySelector('#mdpStatus').textContent='Audio-driven stretch · words follow the flowing outline';
+    document.querySelector('#mdpReason').textContent='The hand follows the moving word and advances on each beat.';
     document.querySelector('#mdpAppearance').textContent=state.appearance?.mode||'White outline and hand with a soft shadow. Word colors are adjustable.';
   }
   function changed(){MDPComposition.invalidate();state.clockState=null;state.appearance=null;if(env?.S.effectGroup==='stickers')env.selectFx('mdpClock');}

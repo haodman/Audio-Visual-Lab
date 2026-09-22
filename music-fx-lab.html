@@ -345,7 +345,7 @@ details.adv>summary:hover{color:var(--ink)}
       </div>
       <div id="sheetStickers" hidden>
         <section id="mdpTests" hidden><h3>Try a different photo</h3><p class="mdp-status">Birthday cake is in Materials. Other photographs remain local review samples.</p><div id="mdpTestPhotos" class="mdp-tests"></div></section>
-        <p class="mdp-status">A full-frame white clock for any photo. Its outer line flows with the music; the hand and words move together on the beat. All audio analysis stays on this device.</p>
+        <p class="mdp-status">A full-frame white clock for any photo. Its outline stretches with the music; words travel with the wave and the hand follows the active word. All audio analysis stays on this device.</p>
         <div id="mdpAppearance" class="mdp-status"></div>
 
         <div id="mdpRules" class="mdp-rules"></div>
@@ -670,10 +670,10 @@ function createRhythmPuzzleEffect() {
   'use strict';
   const clamp = (x,a=0,b=1) => Math.max(a,Math.min(b,x));
   const rules = [
-    {id:'clock',title:'Dynamic clock',trigger:'One full-frame clock for any photo. Selecting another photo keeps this effect active.',detail:'The resting outline covers 95% of each frame dimension. The white hand and words keep shared target positions; only the outer outline flows with the audio.',motion:'The hand advances on measured audio beats, moves for 85ms, settles for 35ms, then holds. One beat per word is the default, with two/four-beat options.'}
+    {id:'clock',title:'Dynamic clock',trigger:'One full-frame clock for any photo. Selecting another photo keeps this effect active.',detail:'The resting outline covers 95% of each frame dimension. The outline stretches in multiple directions. Words follow the same deforming contour and the white hand follows its moving target.',motion:'The hand advances on measured audio beats, moves for 85ms, settles for 35ms, then follows that word until the next event. One beat per word is the default, with two/four-beat options.'}
   ];
   const appearanceRules = [
-    {title:'Flowing audio outline',trigger:'Measured full-band energy, bass and transient detail shape the outer white contour.',detail:'WebAudio reads the decoded PCM at 100Hz. Normalize by track energy, then smooth attack/release over 120/460ms (energy), 160/580ms (bass) and 180/380ms (detail), followed by a 90ms smoothing stage. Broad three-lobe and two-lobe curves carry most movement; fine detail stays restrained. Movement travels according to accumulated audio energy, never a free-running timer.',motion:'Deformation is inward only, up to 6.8% of the local radius at default depth, preserving the outer safety margin. Quiet passages relax toward the resting shape; silence settles to rest. Pause, seek and export use identical song-time samples. Outline depth changes the contour only, not hand timing or word positions.'},
+    {title:'Flowing audio outline',trigger:'Measured full-band energy, bass and transient detail shape the outer white contour.',detail:'WebAudio reads the decoded PCM at 100Hz. Normalize by track energy, then smooth attack/release over 120/460ms (energy), 160/580ms (bass) and 180/380ms (detail), followed by a 120ms smoothing stage. Independent horizontal/vertical stretch, traveling bends and broad radial waves carry the movement; fine detail stays restrained. Movement travels according to accumulated audio energy, never a free-running timer.',motion:'Default radial variation reaches 27.2% at peak input, with up to 12% independent horizontal/vertical stretch and traveling angular bends. The shape alternates between compression and extension inside the full-frame safety margin. Quiet passages relax toward the resting shape; silence settles to rest. Pause, seek and export use identical song-time samples. Stretch depth moves both the contour and the words. The hand recomputes its angle and length from the moving active word each frame; beat selection stays unchanged.'},
     {title:'White clock and word colors',trigger:'The outline, hand, hub and tip stay white (#ffffff) with a thin dark edge and soft shadow.',detail:'Words use a soft multicolor palette by default, or Photo accents, White or Manual. Each word keeps its color for a complete turn; the next turn advances the palette. Photo accents sample a 108 x 192 preview and choose colors using saturation-weighted hue and local luminance contrast. Low-contrast accents fall back to the most legible ink.',motion:'Colors never randomize on individual beats. Photo content does not change clock placement or select a different effect.'},
     {title:'Beat locking and silence',trigger:'The hand follows measured WebAudio onsets, checked against the track beat grid when sufficiently supported.',detail:'Compare four grid phases every 16 beats and favor stronger actual hits. Preserve candidates before onset debounce, so an early quiet transient cannot hide the main hit at fast tempos. Minimum event separation is 52% of a beat, clamped to 140–280ms. Unsupported grids fall back to prominent actual onsets. No hand events are invented during silence.',motion:'Custom words and the hand share each measured event and exact target position. Timed lyric groups snap forward to measured beats and occupy eight persistent slots. Line-only lyric timing is estimated, not forced word alignment. Pausing and seeking reproduce the same frame.'}
   ];
@@ -694,7 +694,7 @@ function createRhythmPuzzleEffect() {
   function contourEnvelope(rms,bass,flux,hz,ref,peak){
     const n=rms.length,energy=new Float32Array(n),low=new Float32Array(n),detail=new Float32Array(n),travel=new Float32Array(n);
     const sorted=Array.from(bass).sort((a,b)=>a-b),bassRef=Math.max(.004,sorted[Math.floor(n*.95)]||0);
-    const raw=[0,0,0],smooth=[0,0,0],attack=[.12,.16,.18],release=[.46,.58,.38],follow=1-Math.exp(-1/(hz*.09));let phase=0;
+    const raw=[0,0,0],smooth=[0,0,0],attack=[.12,.16,.18],release=[.46,.58,.38],follow=1-Math.exp(-1/(hz*.12));let phase=0;
     for(let k=0;k<n;k++){
       const targets=rms[k]<.001?[0,0,0]:[clamp(rms[k]/ref),clamp(bass[k]/bassRef),clamp(flux[k]/Math.max(.001,peak))];
       for(let j=0;j<3;j++){const tau=targets[j]>raw[j]?attack[j]:release[j];raw[j]+=(targets[j]-raw[j])*(1-Math.exp(-1/(hz*tau)));smooth[j]+=(raw[j]-smooth[j])*follow;}
@@ -768,16 +768,21 @@ window.LyricClock=(()=>{
  const palette=['#ffe28a','#97eed4','#ffb3cb','#aee9ff','#dab7ff','#ffd19c','#c5f09a','#f6a3b0'];
  const timelineCache=new WeakMap();
  function outline(a){const r=1+.10*Math.sin(3*a+.7)+.05*Math.cos(5*a-.4)+.013*Math.sin(7*a+1.1);return{x:354*Math.cos(a)*r,y:652*Math.sin(a)*r};}
- // Only the outer contour flows. Shared hand/word geometry stays steady.
- // Inward deformation preserves the resting outline's 2.5% frame margins.
+ // Directional stretching and traveling bends share one geometry with the words.
+ // Positive axis/radial scales keep the contour inside the full-frame margin.
  function flowingOutline(a,signal={},depth=1){
-  const p=outline(a),energy=clamp(signal.energy||0),bass=clamp(signal.bass||0),detail=clamp(signal.detail||0),phase=signal.travel||0;
-  const inset=clamp(depth,0,1.5)*(.008*energy+.032*energy*(.5+.5*Math.sin(3*a+phase))+.020*bass*(.5+.5*Math.cos(2*a-phase*.66+.7))+.008*detail*(.5+.5*Math.sin(5*a+phase*.43-.4)));
-  return {x:p.x*(1-inset),y:p.y*(1-inset)};
+  const d=clamp(depth,0,1.5),energy=clamp(signal.energy||0),bass=clamp(signal.bass||0),detail=clamp(signal.detail||0),phase=signal.travel||0;
+  if(!d||!energy&&!bass&&!detail)return outline(a);
+  const bend=d*(.14*energy*Math.sin(2*a+phase*.72)+.055*bass*Math.sin(3*a-phase*.46+.4));
+  const p=outline(a+bend);
+  const radius=1-d*(.01*energy+.16*energy*(.5+.5*Math.sin(3*a+phase*.70))+.09*bass*(.5+.5*Math.cos(2*a-phase*.61))+.012*detail*(.5+.5*Math.sin(5*a+phase*.43-.4)));
+  const stretchX=1-d*.12*energy*(.5+.5*Math.sin(phase*.84));
+  const stretchY=1-d*.12*bass*(.5+.5*Math.cos(phase*.71+.6));
+  return {x:p.x*radius*stretchX,y:p.y*radius*stretchY};
  }
  const bounds=(()=>{let xmin=Infinity,xmax=-Infinity,ymin=Infinity,ymax=-Infinity;for(let j=0;j<1440;j++){const p=outline(j*TAU/1440);xmin=Math.min(xmin,p.x);xmax=Math.max(xmax,p.x);ymin=Math.min(ymin,p.y);ymax=Math.max(ymax,p.y);}return{xmin,xmax,ymin,ymax,cx:(xmin+xmax)/2,cy:(ymin+ymax)/2};})();
  function layout(width,height){const margin=.025;return{x:width/2,y:height/2,sx:width*(1-2*margin)/(bounds.xmax-bounds.xmin),sy:height*(1-2*margin)/(bounds.ymax-bounds.ymin),cx:bounds.cx,cy:bounds.cy,coverage:.95};}
- function point(index,count){const p=outline(-Math.PI/2+TAU*index/Math.max(1,count));return{x:p.x*.76,y:p.y*.80};}
+ function point(index,count,signal,depth=1){const p=flowingOutline(-Math.PI/2+TAU*index/Math.max(1,count),signal,depth);return{x:p.x*.76,y:p.y*.80};}
  function fitWords(words,max=12){const out=[];for(let i=0;i<Math.min(words.length,max);i++){const a=Math.floor(i*words.length/Math.min(words.length,max)),b=Math.floor((i+1)*words.length/Math.min(words.length,max));out.push(words.slice(a,b).join(' '));}return out;}
  function nextBeat(beats,t){let lo=0,hi=beats.length;while(lo<hi){const mid=(lo+hi)>>1;if(beats[mid]<t)lo=mid+1;else hi=mid;}return lo<beats.length?beats[lo]:null;}
  function timeline(cues,beats=[]){
@@ -813,8 +818,9 @@ window.LyricClock=(()=>{
    const startsWord=q.index>=0&&q.index%stride===0;advance=event>0&&startsWord&&index!==previousIndex;phase=advance?settle(q.age):1;eventTime=startsWord?t-q.age:null;
    if(!advance)previousIndex=index;
   }
-  const target=point(index,slotCount),previous=point(previousIndex,slotCount),hand=handBetween(previous,target,phase,advance);
-  return{labels,index,previousIndex,slotCount,target,previous,phase,advance,turn,eventTime,lyric,pulse:q.pulse||0,...hand};
+  const positions=Array.from({length:slotCount},(_,j)=>point(j,slotCount,c.contour,c.outlineDepth??1));
+  const target=positions[index],previous=positions[previousIndex],hand=handBetween(previous,target,phase,advance);
+  return{labels,positions,index,previousIndex,slotCount,target,previous,phase,advance,turn,eventTime,lyric,pulse:q.pulse||0,...hand};
  }
  function handAt(t,c,cues=[]){return stateAt(t,c,Array.isArray(cues)?cues:[]);}
  function textColors(c){return c.textStyle==='White'?['#ffffff']:c.textStyle==='Manual'?[c.textInk||'#ffe28a']:c.textStyle==='Photo accents'?(c.palette||palette):palette;}
@@ -827,7 +833,7 @@ window.LyricClock=(()=>{
   let targetHalfWidth=25,targetHalfHeight=22;
   for(let j=0;j<state.labels.length;j++){
    const label=state.labels[j];if(!label||c.textMode==='none')continue;
-   const pos=point(j,state.slotCount),selected=j===state.index,color=colors[mod(j+state.turn,colors.length)],fontSize=state.slotCount>10?36:42;
+   const pos=state.positions[j],selected=j===state.index,color=colors[mod(j+state.turn,colors.length)],fontSize=state.slotCount>10?36:42;
    ctx.save();ctx.font=`${fontSize}px LatinHand,cursive`;
    const maxWidth=state.slotCount>8?142:182,measured=ctx.measureText(label.word).width,fit=Math.min(1,maxWidth/Math.max(1,measured)),scale=fit*(selected?activeScale:1);
    if(selected){targetHalfWidth=measured*scale/2;targetHalfHeight=fontSize*scale*.55;}
@@ -846,7 +852,7 @@ window.LyricClock=(()=>{
   return state;
  }
  function render(p,t,c,cues=[]){p.clear();const ctx=p.drawingContext,f=layout(p.width,p.height);ctx.save();ctx.translate(f.x,f.y);ctx.scale(f.sx,f.sy);ctx.translate(-f.cx,-f.cy);const state=draw(ctx,t,c,cues);ctx.restore();return{...state,layout:f};}
- return{draw,render,stateAt,handAt,timeline,point,outline,flowingOutline,bounds,layout,settle,palette,textColors,version:'2.0.0-dynamic-clock'};
+ return{draw,render,stateAt,handAt,timeline,point,outline,flowingOutline,bounds,layout,settle,palette,textColors,version:'2.1.0-stretching-clock'};
 })();
 
 </script>
@@ -878,11 +884,11 @@ function createDynamicClockEffects({S,src,ctx,W,H,R,C,Sel,T}) {
   let lyricSource=null,lyricCues=[];
   const rule=MDPRules.rules[0];
   return {mdpClock:{
-    name:'动态时钟',icon:'◷',desc:'流动外框 · 文字与指针随拍同步',
+    name:'动态时钟',icon:'◷',desc:'多向拉伸 · 文字随波形流动',
     hint:`${rule.trigger}\n${rule.detail}\n${rule.motion}`,state:{},
     params:[Sel('copy','Text source',['自定义文字','自动歌词'],'自定义文字'),T('text','Your words','Keep a little wonder with you'),
       Sel('textStyle','Word colors',['Soft colors','Photo accents','White','Manual'],'Soft colors'),C('textInk','Manual word color','#ffe28a'),
-      Sel('wordPace','Beats per word',['1','2','4'],'1'),R('outlineDepth','轮廓波动',0,1.5,1),R('intensity','Word emphasis',0,1.5,.75),R('stroke','White line weight',.8,2,1.15)],
+      Sel('wordPace','Beats per word',['1','2','4'],'1'),R('outlineDepth','拉伸幅度',0,1.5,1),R('intensity','Word emphasis',0,1.5,.75),R('stroke','White line weight',.8,2,1.15)],
     draw(f,p){
       ctx.drawImage(src,0,0);
       const t=f.t||0,a=S.analysis?.mdp,composition=MDPComposition.prepare();if(!composition)return;
@@ -907,8 +913,8 @@ window.MDPClockUI=(()=>{
   let env;
   const state={clockState:null,appearance:null};
   function update(){
-    document.querySelector('#mdpStatus').textContent='Full-frame white clock · smooth audio-reactive outline';
-    document.querySelector('#mdpReason').textContent='The hand points to the highlighted word on each beat.';
+    document.querySelector('#mdpStatus').textContent='Audio-driven stretch · words follow the flowing outline';
+    document.querySelector('#mdpReason').textContent='The hand follows the moving word and advances on each beat.';
     document.querySelector('#mdpAppearance').textContent=state.appearance?.mode||'White outline and hand with a soft shadow. Word colors are adjustable.';
   }
   function changed(){MDPComposition.invalidate();state.clockState=null;state.appearance=null;if(env?.S.effectGroup==='stickers')env.selectFx('mdpClock');}
