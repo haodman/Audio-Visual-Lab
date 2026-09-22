@@ -244,3 +244,90 @@ final result: passed
 - 新增四种字体样式、三种排版颗粒度，以及自动反差、图片深色、图片亮色、图片代表色、经典黑白和手动颜色共七种颜色模式。
 - 默认字符间距由 `23` 调整为 `27`、覆盖度由 `0.26` 调整为 `0.18`，减少画面拥挤。
 - 发布默认值进一步调整为字符覆盖 `0.10`、颜色模式「图片代表色」。
+
+
+## 2026-09-21 — MDP image-matched music stickers, local review
+
+- Adapted the user's existing umbrella, sunshine, flower/star/willow and irregular clock renderers. Excluded the flower/sun score, orbiting staff and storm effects. Added star, butterfly and leaf umbrella variants and custom English text controls.
+- Added an image-first Smart stickers group without removing existing effects. Semantic object anchors, independent red/yellow/green regions and shared MODNet/person exclusion feed a ranked choice. Only one sticker is applied by default.
+- Motion uses measured WebAudio PCM onset/energy signals: umbrella canopy breathing, clock steps and character fading, strong sunshine accents, and swaying flower/star/willow layers. Rendering uses song time; all seven manual effects passed the paused-frame equality check.
+- Real Chrome/WASM inference checked all eight generated review photographs: candle, single flower, cotton candy, lollipop, balloon and sun produced sunshine anchors; accessory colors produced three independent choices; a green jacket did not produce a green-object match. Cotton candy required a local crop recheck; the sun required disk verification; the candy anchor was refined to the circular head. These are sampled checks, not general recognition accuracy claims.
+- Real music inference on two library songs did not satisfy the combined country/folk + sad threshold. No positive sad-country audio sample has yet been verified. Model similarities are estimates and the rain umbrella remains manually selectable.
+- Browser checks covered custom text, butterfly selection, shared right drawer, normal/narrow layout, playback, pause and a 15-second MP4 download. Full playback verified a 15.017-second duration, 451 decoded frames and one audio track. No page/effect-render errors were recorded. First inference requires downloading model weights; failure leaves universal/manual effects usable.
+- Built both root HTML entry points from source; JavaScript syntax, rules tests and whitespace checks pass. Local preview uses port 8937 because the documented 8765 port was already occupied.
+- Eight replacement Instagram-style photos are outside git behind an ignored localhost-only review-assets link. They are not added to the public material library. User visual approval, selected-photo approval, fresh README/rules review, GitHub push and website publication are still pending.
+
+
+## 2026-09-21 — Three stickers, automatic selection and person-safe umbrella
+
+- Replaced the visible Smart/Auto action with automatic selection after a photo change inside Music stickers. Three effect chips remain: Rotating sunshine, Star umbrella, Rotating text clock. Retired flower rain, starlight, willow and the separate rain-umbrella branch; no music-genre model is loaded. Existing Visual effects remain available.
+- Added the user-selected clean birthday-cake photograph to the tracked material library, embedded by the build. The other seven generated test photographs stay outside git/public presets.
+- Fitted the umbrella canopy into empty space above the head, with an upper-corner fallback and clock fallback when no clear region exists. Expanded shared MODNet protection by 15 canvas pixels and clipped all umbrella content behind it. Blue-hat selfie pixel check: 315,325 protected pixels, zero changed subject pixels, 8,783 changed background pixels.
+- All three effects choose stable local contrast-aware photo colors. White/dark synthetic tests verify dark/light inks respectively and >4.5:1 base contrast on uniform backgrounds. The blue-hat canopy picked dark navy (#191f29); the dark birthday scene picked warm ivory (#fff9ea). Added detailed English palette logic to the shared rule drawer and trigger document.
+- Umbrella breathing now uses smoothed phrase energy and multi-beat easing. Sampled 12 seconds: radius-breath range 0.0365 and maximum per-60Hz-frame change 0.000369; no kick snapping. Clock events are separated by at least 1.25 seconds and ease/crossfade for 0.55 seconds. Sunshine radius accents are reduced, while candle rotation is about 2.4 times the prior speed.
+- Every sunshine spoke has copy; a one-word test produced seven nonempty labels with text-emoticon fillers. Multiple distinct candle detections remain eligible.
+- Actual Chrome checks passed: cake automatically selects sunshine, blue-hat photo automatically selects umbrella, manual clock text edits, switching back by clicking the material thumbnail restores automatic sunshine, only three sticker chips visible, no page/effect errors. All three effects passed paused-frame equality checks.
+- Rules tests, JS syntax, generated-page build and diff whitespace checks pass. Local only; user approval and fresh release-instruction review are still required before any push or website update.
+
+
+## 2026-09-21 — Umbrella removal, foreground gating and clock beat correction
+
+- Removed the umbrella renderer file, bundled script, adapter, controls and automatic fallback. Only sunshine and rotating text clock remain. Every new photo defaults to clock while recognition runs; unrelated Visual effects are preserved.
+- Added foreground size and composition gates after semantic recognition. Flower heads need >=1.5% of the frame and adequate width/height; peripheral objects are rejected. Birthday candles require a large standalone candle or a spatially attached foreground cake; tiny distant sun disks are rejected. Ranking now considers qualifying foreground/context area. English rules expose exact thresholds and rejected-object evidence.
+- Verified the exact seaside/dog original shown in user feedback with real OWL-ViT inference: the railing flower was recognized at similarity 0.189, but its 0.0564% frame area and peripheral center rejected the trigger. Automatic selection chose clock. Birthday cake remained sunshine with cake context area 5.44%; the held foreground flower remained sunshine at 1.59% area. Blue-hat selfie chose clock. No filename-based exceptions were added.
+- Replaced the clock's 1.25-second event spacing / 550ms drift with actual audio onsets, locally corrected beat-grid phases, an 85ms 15-degree step and 35ms settle followed by a hold. Text, hand weight and tip accents share the onset; the whole clock no longer scales. Fixed historical lyric anchors to evaluate beat state at their own timestamps.
+- The initial timing check exposed a half-beat error in the existing full-band grid. Comparing four phases every 16 beats now favors stronger real hits over offbeat accompaniment. On the deterministic 124 BPM house sample, eight consecutive main beats in 18–22s matched with errors 0.97–9.68ms; every clock event was a measured onset. This is sampled validation, not a claim of perfect transcription for every song.
+- Actual Chrome verified two chips only, no Auto action, undefined umbrella runtime, foreground/background matching, photo changes, custom clock text, a 15-second video export, zero page/effect errors and stable paused frames. Rules tests cover offbeat-phase correction, real-onset timing, silent input, foreground/context association, retired fallbacks and light/dark adaptive ink.
+- Syntax checks, source build and whitespace checks pass. Birthday image remains in Materials. Local-only; no GitHub push or website deployment.
+
+
+## 2026-09-21 — Full-frame white clock with paired words and hand
+
+- Clock outline now fits 95% of both canvas dimensions with 2.5% margins. Removed the clock composition search and size/offset controls; changing between seaside/dog and blue-hat portrait keeps identical geometry. Clock placement does not use the subject mask.
+- Outline, hand, hub and tip are fixed pure white with a narrow dark edge and soft shadow. Word colors independently support soft colors, photo accents, white or manual ink. The default palette advances once per full turn, without per-beat color flashing.
+- Replaced fixed 15-degree steps with targets derived from the actual label coordinates. The hand stops before its highlighted label. Custom copy advances every two measured beats by default (options 1/2/4), with intermediate beats accenting the same target. The 85ms step and 35ms settle remain crisp; the outline does not move or scale.
+- Long copy groups into at most twelve labels without discarding tokens. Timed lyrics use eight persistent slots and beat-snapped groups; line-only cue timing remains approximate. Rendering and pointer state share the same event and geometry.
+- Actual Chrome checked both photographs, custom text, long-copy preservation, word-color and pace controls, fixed white hand, identical full-frame fit, stable paused frames and a 15-second export. No page/effect errors occurred. Numeric tests cover 24 word advances, intervening holds, precise target angles, deterministic seeking, lyric beat snapping, and 95% geometry at both 540 x 960 and 1080 x 1920. Existing foreground/DSP tests and source syntax/build checks pass.
+- Additional Chrome check with the library track Prelude confirmed the active lyric group and hand target angles match exactly. Narrow viewport remained usable. The exported MP4 played completely: 15.024 seconds, 451 decoded frames, 780 x 1688, one audio track, no page errors.
+- English runtime and detailed trigger rules, source README and handoff state reflect the revised sizing, color and shared-target behavior. Local-only; GitHub and the public website are unchanged.
+
+
+## 2026-09-21 — Faster clock response without losing fast onsets
+
+- Reproduced the report on Be By You, which this app analyzes/displays as 186 BPM. The legacy 220ms onset debounce let an earlier quiet transient suppress a stronger following hit. A second fixed 280ms filter then discarded adjacent fast hits; default two-event word pacing halved the remaining movements again.
+- Preserve all qualifying local onset candidates for the clock before the legacy debounce. Sunshine keeps its existing event stream and slower behavior. The clock still selects one real candidate per supported grid position, with phase correction and silence rejection. Minimum spacing is now 52% of the detected beat period, clamped to 140–280ms. No BPM-only events are generated.
+- Default custom-word pacing is now one verified beat per word. Optional two/four-beat pacing is retained. Full-frame white geometry, exact hand-to-word targeting and 85ms movement + 35ms settle are preserved.
+- Actual WebAudio analysis of the same track: 40–55s increased from 24 selected events (roughly 12 default word advances) to 47 events/advances, with 0.32s median spacing. At 80–95s, events increased from 21 to 47; at 120–135s, from 23 to 45. The quieter 10–25s section retains fewer events (26), rather than inventing a full grid. These are measured event-count checks, not manual beat annotations or a claim of perfect transcription.
+- A synthetic 186 BPM regression with quiet early transients verifies recovery of every stronger main hit, <=25ms onset error, natural timing variation and actual-candidate provenance. Renderer tests verify 24 consecutive single-beat word/hand advances with a settled hold between beats. Existing foreground, color, silence, slower pulse, phase, pause/seek and lyric geometry tests pass.
+- Real Chrome confirmed Be By You at 186 BPM, default Beats per word = 1, and full-frame white clock with paired colored text during playback. Local only; no push or website update.
+
+
+## 2026-09-21 — Smart dynamic stickers source PR preparation
+
+- Treat rotating sunshine and rotating text clock as one feature, 智能动态贴纸 (`smartStickers`), with one dedicated branch and one regular Open PR. Updated the shared feature tab and feature documentation to that name.
+- Fetched current origin/main and reread the remote README/AGENTS release conditions. Main remains f8cc7b9; there are no new base commits to integrate. Submit source, both generated HTML entry points, selected birthday photograph, font/license and QA documentation together.
+- Pending generated review photos, local symlinks, browser profiles, test recordings and diagnostic pages are excluded. No new music files are added. The base index.html was behind the existing source; the required build now synchronizes both generated entry points.
+- Source push and regular Open PR creation are authorized. Merging and public-site publication are not authorized by this request.
+
+
+## 2026-09-21 — Dynamic clock only, with a smooth audio-reactive outline
+
+- Current scope supersedes the earlier sticker experiments above: the user removed the candle/sunshine sticker and renamed the single remaining feature to 动态时钟. Removed its renderer, object-matching worker, recognition rules, retry controls and model-download copy. The birthday photograph remains in Materials; changing photos always retains the clock. Existing unrelated effects are preserved.
+- The outer contour now uses full-band RMS, low-frequency RMS and restrained transient detail from actual decoded PCM. Two causal smoothing stages give 120–180ms attack, 380–580ms release and a 90ms follow stage. Curve travel integrates audio energy, with no independent timer; silent input produces no motion, and silent tails settle to rest. Samples interpolate at song time for stable pause/seek/export behavior.
+- The contour deforms inward, preserving the resting 95% full-frame bounds. Default depth is bounded by 6.8% of local radius, with a 0–1.5 depth control. The white stroke, dark shadow and stable word/hand positions are preserved. The hand still advances on each verified beat by default, including 186 BPM material.
+- New contour regression: loud/quiet PCM changes deformation, silent PCM is stationary, long silent tails settle, arbitrary seeks reproduce identical points, maximum depth stays within the frame bounds and changing contour depth cannot alter word/hand targets. An abrupt synthetic level change produced at most 1.052 canvas pixels per 60Hz frame and 0.353 pixels/frame velocity change. Existing clock timing, lyric geometry, silence, phase correction and 186 BPM transient regressions pass.
+- Real Chrome was launched in an isolated session with audio output muted. Verified a single 动态时钟 chip, undefined sunshine/matching runtimes and no OWL-ViT requests. Birthday, window-coffee portrait and seaside/dog photos retain the clock. Parameters, custom words, Prelude timed lyrics and narrow 820 x 900 layout were checked; settled lyric hand-to-word angle error was zero. No page errors were reported.
+- On real Be By You (displayed 186 BPM), contour energy varies from 0.539 to 0.902 in seconds 40–55, and the maximum contour displacement per 60Hz frame is 0.477 canvas pixels. Depth zero versus one changes rendered pixels without changing hand/word geometry. Paused canvas pixels remain identical.
+- Exported the current effect as a 15.014-second MP4, 780 x 1688, with decodable audio; replayed the full duration without a decoding error. The QA browser was closed afterward so no background playback remains from this verification. User-facing preview media stay outside git.
+- Both HTML entry points are rebuilt from source. Updated English motion/color rules, README and handoff state. Continue the existing PR #3 under the name 动态时钟; keep it Open, non-draft and unmerged, with no public website publication.
+
+
+## 2026-09-21 — Stronger multidirectional stretch and traveling words
+
+- Replaced the subtle outer-only ripple with independent horizontal/vertical stretch, traveling angular bends and larger radial waves. At default depth, peak inputs permit up to 27.2% radial variation, 12% independent axis stretch and 0.195 radians of bending; positive scales keep the entire shape inside the resting full-frame bounds. Renamed the depth control to 拉伸幅度.
+- All custom/timed word positions now sample the same deformed contour. Text remains upright for readability. The active word and both hand transition endpoints share those moving positions, so hand angle and length continuously follow the active word between beat events. Measured beat selection and 85ms move / 35ms settle timing remain unchanged.
+- Increased the final audio-envelope smoothing stage from 90ms to 120ms to keep the larger motion rounded. No wall-clock motion is introduced. Silent input, quiet release, deterministic seeking and paused frames remain stable.
+- Updated contour regressions to assert visibly changing width/height, every default word moving at least 35 canvas pixels across the reference signal, exact moving hand/word alignment for custom copy and lyrics, frame bounds, depth zero, and unchanged beat selection. The reference signal produces 63–109px word travel and about 110px width/height range. An abrupt synthetic level change produces at most 5.224px per 60Hz frame, with 1.603px/frame maximum velocity change. Existing DSP, silence, fast 186 BPM timing and renderer tests pass.
+- In isolated muted Chrome, real Be By You at 186 BPM (40–55s) produces 99.1px width range, 74.5px height range, and 68.6–95.8px default-word travel on the 540×960 canvas. Maximum contour step is 2.066px per 60Hz frame; settled hand-to-moving-word error is below 1e-15 radians. After the pause frame completes, repeated canvas pixels and state are identical.
+- Actual Prelude lyrics on the seaside/dog photo move with the waveform and retain zero settled hand-target error. White clock styling remains unchanged. Window-coffee portrait was visually checked. The current 15.0147-second, 780×1688 MP4 was exported and replayed completely with decodable audio and no decoding errors. No page errors; the muted QA browser was closed.
+- Rebuilt both entry points and refreshed English rules, README and handoff state. This revision continues existing Open PR #3; no merge or public-site publication.

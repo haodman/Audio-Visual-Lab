@@ -96,3 +96,10 @@ The Chinese UI labels are the source of truth: `原图`, `风迹`, `上下分屏
 - Public files currently live in `haodman/haodman.com/audio-visual-lab/` and deploy through Vercel.
 - Root `index.html` serves the full app directly to avoid a visible redirect-link flash.
 - Deployment is not yet automated between the two repositories.
+
+
+## Source PR review: 动态时钟 (2026-09-21)
+
+Only the dynamic clock remains in the feature group. The user removed the birthday-candle/sunshine sticker; its renderer, object-recognition worker and switching rules are deleted. The approved birthday photograph remains an ordinary material. The outer white contour now visibly stretches along independent horizontal/vertical axes, with traveling angular bends and radial waves driven by smoothed WebAudio energy/bass/detail. Words move with exactly the same deformation. Stretch depth is adjustable. Silence relaxes to rest; pause/seek/export use the same precomputed song-time envelopes. Deformation stays inside the resting 95% frame boundary. The hand continuously updates its angle and length to the moving active word and advances between words on actual onsets, defaulting to one word per beat with 85ms movement + 35ms settling. Photo accents remain optional; clock strokes stay white with soft shadows. No new music or unapproved review photographs are included.
+
+Update existing PR #3 on `feature/smart-stickers` as one feature named 动态时钟. Keep it Open, non-draft and unmerged; do not publish the separate `haodman/haodman.com` website repository. Both root HTML entry points must be generated from source. English rules: `src/mdp/MOTION-RULES.md`.
