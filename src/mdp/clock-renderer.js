@@ -4,6 +4,13 @@ window.LyricClock=(()=>{
  const palette=['#ffe28a','#97eed4','#ffb3cb','#aee9ff','#dab7ff','#ffd19c','#c5f09a','#f6a3b0'];
  const timelineCache=new WeakMap();
  function outline(a){const r=1+.10*Math.sin(3*a+.7)+.05*Math.cos(5*a-.4)+.013*Math.sin(7*a+1.1);return{x:354*Math.cos(a)*r,y:652*Math.sin(a)*r};}
+ // Only the outer contour flows. Shared hand/word geometry stays steady.
+ // Inward deformation preserves the resting outline's 2.5% frame margins.
+ function flowingOutline(a,signal={},depth=1){
+  const p=outline(a),energy=clamp(signal.energy||0),bass=clamp(signal.bass||0),detail=clamp(signal.detail||0),phase=signal.travel||0;
+  const inset=clamp(depth,0,1.5)*(.008*energy+.032*energy*(.5+.5*Math.sin(3*a+phase))+.020*bass*(.5+.5*Math.cos(2*a-phase*.66+.7))+.008*detail*(.5+.5*Math.sin(5*a+phase*.43-.4)));
+  return {x:p.x*(1-inset),y:p.y*(1-inset)};
+ }
  const bounds=(()=>{let xmin=Infinity,xmax=-Infinity,ymin=Infinity,ymax=-Infinity;for(let j=0;j<1440;j++){const p=outline(j*TAU/1440);xmin=Math.min(xmin,p.x);xmax=Math.max(xmax,p.x);ymin=Math.min(ymin,p.y);ymax=Math.max(ymax,p.y);}return{xmin,xmax,ymin,ymax,cx:(xmin+xmax)/2,cy:(ymin+ymax)/2};})();
  function layout(width,height){const margin=.025;return{x:width/2,y:height/2,sx:width*(1-2*margin)/(bounds.xmax-bounds.xmin),sy:height*(1-2*margin)/(bounds.ymax-bounds.ymin),cx:bounds.cx,cy:bounds.cy,coverage:.95};}
  function point(index,count){const p=outline(-Math.PI/2+TAU*index/Math.max(1,count));return{x:p.x*.76,y:p.y*.80};}
@@ -51,7 +58,7 @@ window.LyricClock=(()=>{
   const state=stateAt(t,c,cues),colors=textColors(c),stroke=c.stroke||1.15;
   ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
   function whiteStroke(width){ctx.save();ctx.shadowColor='rgba(7,14,24,.64)';ctx.shadowBlur=6;ctx.shadowOffsetY=2;ctx.strokeStyle='rgba(8,14,24,.26)';ctx.lineWidth=width+1.5;ctx.stroke();ctx.shadowBlur=3;ctx.strokeStyle='#ffffff';ctx.lineWidth=width;ctx.stroke();ctx.restore();}
-  ctx.beginPath();for(let j=0;j<=480;j++){const p=outline(-Math.PI/2+j*TAU/480);j?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);}ctx.closePath();whiteStroke(4.4*stroke);
+  ctx.beginPath();for(let j=0;j<=480;j++){const p=flowingOutline(-Math.PI/2+j*TAU/480,c.contour,c.outlineDepth??1);j?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);}ctx.closePath();whiteStroke(4.4*stroke);
   const active=state.labels[state.index],intensity=c.intensity??.75,activeScale=1+state.pulse*.13*intensity;
   let targetHalfWidth=25,targetHalfHeight=22;
   for(let j=0;j<state.labels.length;j++){
@@ -75,5 +82,5 @@ window.LyricClock=(()=>{
   return state;
  }
  function render(p,t,c,cues=[]){p.clear();const ctx=p.drawingContext,f=layout(p.width,p.height);ctx.save();ctx.translate(f.x,f.y);ctx.scale(f.sx,f.sy);ctx.translate(-f.cx,-f.cy);const state=draw(ctx,t,c,cues);ctx.restore();return{...state,layout:f};}
- return{draw,render,stateAt,handAt,timeline,point,outline,bounds,layout,settle,palette,textColors,version:'1.7.0-full-frame-paired'};
+ return{draw,render,stateAt,handAt,timeline,point,outline,flowingOutline,bounds,layout,settle,palette,textColors,version:'2.0.0-dynamic-clock'};
 })();

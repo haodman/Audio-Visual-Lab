@@ -1,17 +1,16 @@
-# 智能动态贴纸（smartStickers）
+# 动态时钟（dynamicClock）
 
-One feature with two retained sticker styles adapted from the user's original MDP drawing engines: rotating sunshine and irregular rotating text clock. Umbrella code is removed from the source bundle, registry, controls and automatic fallback. Earlier flower/star/willow effects are not registered. Original Desktop files are unchanged.
+A single full-frame clock, adapted from the user's original irregular text-clock drawing. The retired sunshine/candle renderer and semantic image matching are removed. Original Desktop files are unchanged.
 
-- `rules.js`: conservative foreground subject gates, cake/candle spatial context, ranking, image-adaptive palette, WebAudio onset analysis and locally phase-aligned clock events with pre-debounce onset candidates and tempo-aware separation.
-- `matching.js`: lazy OWL-ViT worker, crop rechecks, stale-result protection, memory cache and automatic clock/sunshine selection on photo changes. The clock is the unconditional fallback. No music-genre model is downloaded.
-- `composition.js`: photo sampling and existing shared MODNet/person data; no clock placement search.
-- `effects.js`: two adapters in the existing canvas/audio/parameter system.
-- `clock-renderer.js`: 95% full-frame white outline and hand with shadow; exact shared word/hand targets, 85ms onset step + 35ms settle, one beat per custom word by default, deterministic pause/seek and eight-slot timed lyrics.
-- `light-stickers.js`: sunshine with candle flame anchors and filled text/emoticon spokes.
-- `fonts/`: original Gochi Hand and OFL license.
+- `effects.js`: one `mdpClock` adapter using the existing canvas, audio transport, custom text and timed lyrics.
+- `clock-renderer.js`: white clock, shared word/hand target geometry and audio-driven outer-contour deformation.
+- `rules.js`: actual PCM onset detection, fast-tempo beat selection, smooth contour energy/bass/detail envelopes and photo word colors.
+- `composition.js`: cached whole-photo color sampling; no masks or subject-dependent placement.
+- `clock-ui.js`: clock controls, English motion rules and localhost-only review photographs; no model worker.
+- `fonts/`: locally bundled Gochi Hand and its SIL Open Font License.
 
-The selected birthday-cake image is tracked at `src/models/mdp/birthday-flash.png` and embedded in both built entry points. Other test photos remain outside git behind an ignored localhost-only link. Test labels never feed matching.
+See [MOTION-RULES.md](MOTION-RULES.md) for exact smoothing, frame bounds, beat timing and color logic. The clock itself does not download an image model. Existing unrelated effects keep the app's shared matting path. Music remains lazy-loaded.
 
-Run `node src/mdp/rules.test.cjs`, `node src/mdp/clock-renderer.test.cjs` and `node src/mdp/clock-fast-beats.test.cjs`, check JavaScript syntax, build via `python3 src/build.py`, and run `git diff --check`. Local review uses port 8937; port 8765 was occupied. `?stickers=1&material=<photo name>` can open a material for review. An explicit unrelated Visual effect remains available in its own tab.
+Run `node src/mdp/rules.test.cjs`, `node src/mdp/clock-renderer.test.cjs`, `node src/mdp/clock-fast-beats.test.cjs`, and `node src/mdp/clock-outline.test.cjs`, then `python3 src/build.py` and real-browser QA. The outline regression covers audio dependence, silence, 60fps continuity, deterministic seek, safe bounds and unchanged word/hand geometry.
 
-TRIGGER-RULES.md defines exact gates, rhythm and color behavior. Subject prominence and beat analysis are estimates; weak evidence falls back to the clock. All processing stays in-browser, except first-use model/runtime downloads. Both styles are submitted together for source PR review. No merge or website publication is authorized. Reread website instructions and obtain separate authorization before any website release.
+This revision updates the existing Open PR #3; it must not merge or deploy the public site. The approved birthday photograph remains in Materials. Other generated review photos stay outside version control.

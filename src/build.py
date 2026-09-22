@@ -66,7 +66,7 @@ rhythm_puzzle_js = open('rhythm-puzzle.js', encoding='utf-8').read()
 js = open('app.js', encoding='utf-8').read()
 js = js.replace('/*__PACK_TRACKS__*/[]', music_arr)
 html = html.replace('/*__PRESETS__*/[]', arr)
-for module in ['rhythm-puzzle.js', 'mdp/rules.js', 'mdp/clock-renderer.js', 'mdp/light-stickers.js', 'mdp/composition.js', 'mdp/effects.js', 'mdp/matching.js', 'app.js']:
+for module in ['rhythm-puzzle.js', 'mdp/rules.js', 'mdp/clock-renderer.js', 'mdp/composition.js', 'mdp/effects.js', 'mdp/clock-ui.js', 'app.js']:
     source = js if module == 'app.js' else open(module, encoding='utf-8').read()
     html = html.replace('<script src="' + module + '"></script>', '<script>\n' + source + '\n</script>')
 # Preserve the hand-drawn font when the review is served or shared as one HTML.

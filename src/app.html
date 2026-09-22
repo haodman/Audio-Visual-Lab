@@ -234,7 +234,7 @@ details.adv>summary:hover{color:var(--ink)}
 .copy-status{min-width:0;font-size:10px;color:var(--ink2);line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 @font-face{font-family:LatinHand;src:url('src/mdp/fonts/GochiHand-Regular.ttf') format('truetype');font-display:swap}
-.mdp-match{border-top:1px solid var(--hair);margin-top:10px;padding-top:10px;font-size:11px;line-height:1.5}.mdp-match[hidden]{display:none}.mdp-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0}.mdp-status{color:var(--ink2);font-size:10px}.mdp-reason{margin-top:6px;color:#dfdbd0}.mdp-rules article{border-top:1px solid var(--hair);padding:12px 0}.mdp-rules h4{margin:0 0 7px;font-size:13px}.mdp-rules p{font-size:12px;line-height:1.65;color:var(--ink2);margin:6px 0}.mdp-tests{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.mdp-tests button{text-align:left;min-width:0}.mdp-tests img{width:100%;aspect-ratio:9/16;object-fit:cover;border-radius:9px}.mdp-tests span{font-size:10px;display:block;margin:5px 0}#mdpEvidence{font-size:10px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:300px;overflow:auto}#mdpChoices{max-height:62px;overflow:auto}.effect-card:has(.mdp-match:not([hidden])) .fx{max-height:70px}.fx button[hidden]{display:none}.fxtabs{display:flex;gap:5px;margin-bottom:7px}.mdp-match{padding-top:6px;margin-top:6px}.mdp-match .mdp-actions{margin:3px 0}.mdp-reason{font-size:10px;line-height:1.4}.mdp-status{line-height:1.4}
+.mdp-match{border-top:1px solid var(--hair);margin-top:10px;padding-top:10px;font-size:11px;line-height:1.5}.mdp-match[hidden]{display:none}.mdp-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0}.mdp-status{color:var(--ink2);font-size:10px}.mdp-reason{margin-top:6px;color:#dfdbd0}.mdp-rules article{border-top:1px solid var(--hair);padding:12px 0}.mdp-rules h4{margin:0 0 7px;font-size:13px}.mdp-rules p{font-size:12px;line-height:1.65;color:var(--ink2);margin:6px 0}.mdp-tests{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.mdp-tests button{text-align:left;min-width:0}.mdp-tests img{width:100%;aspect-ratio:9/16;object-fit:cover;border-radius:9px}.mdp-tests span{font-size:10px;display:block;margin:5px 0}.effect-card:has(.mdp-match:not([hidden])) .fx{max-height:70px}.fx button[hidden]{display:none}.fxtabs{display:flex;gap:5px;margin-bottom:7px}.mdp-match{padding-top:6px;margin-top:6px}.mdp-match .mdp-actions{margin:3px 0}.mdp-reason{font-size:10px;line-height:1.4}.mdp-status{line-height:1.4}
 
 </style>
 </head>
@@ -311,9 +311,8 @@ details.adv>summary:hover{color:var(--ink)}
         <div class="fx" id="fxlist"></div>
         <div class="effect-copy" id="effectCopy" hidden></div>
         <div id="mdpMatchBar" class="mdp-match" hidden>
-          <div class="mdp-actions"><b>PHOTO → STICKER</b><button id="mdpRulesBtn" class="act">Rules &amp; test photos ↗</button><button id="mdpPhotoUpload" class="act">Upload photo</button></div>
+          <div class="mdp-actions"><b>动态时钟</b><button id="mdpRulesBtn" class="act">Motion &amp; colors ↗</button><button id="mdpPhotoUpload" class="act">Upload photo</button></div>
           <div id="mdpStatus" class="mdp-status" role="status"></div>
-          <div class="mdp-actions"><button id="mdpRetry" class="act" hidden>Retry image</button></div>
           <div id="mdpReason" class="mdp-reason"></div>
 
         </div>
@@ -346,11 +345,10 @@ details.adv>summary:hover{color:var(--ink)}
       </div>
       <div id="sheetStickers" hidden>
         <section id="mdpTests" hidden><h3>Try a different photo</h3><p class="mdp-status">Birthday cake is in Materials. Other photographs remain local review samples.</p><div id="mdpTestPhotos" class="mdp-tests"></div></section>
-        <p class="mdp-status">Matching runs in your browser. The first use downloads the image model; keep this page open. Your uploaded photo and audio stay on this device. You can use every sticker manually while a model loads.</p>
-        <div id="mdpChoices" class="mdp-actions"></div><div id="mdpAppearance" class="mdp-status"></div>
+        <p class="mdp-status">A full-frame white clock for any photo. Its outer line flows with the music; the hand and words move together on the beat. All audio analysis stays on this device.</p>
+        <div id="mdpAppearance" class="mdp-status"></div>
 
         <div id="mdpRules" class="mdp-rules"></div>
-        <details><summary>Recognition evidence</summary><pre id="mdpEvidence"></pre></details>
       </div>
       <div id="sheetParams" hidden><div class="params" id="params"></div><div id="fxhint"></div></div>
     </div>
@@ -364,10 +362,9 @@ const PRESETS = /*__PRESETS__*/[];
 <script src="rhythm-puzzle.js"></script>
 <script src="mdp/rules.js"></script>
 <script src="mdp/clock-renderer.js"></script>
-<script src="mdp/light-stickers.js"></script>
 <script src="mdp/composition.js"></script>
 <script src="mdp/effects.js"></script>
-<script src="mdp/matching.js"></script>
+<script src="mdp/clock-ui.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

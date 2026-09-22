@@ -213,10 +213,12 @@ CDN 需要开 CORS。也可以在页面里设 `window.MFX_MANIFEST = '...'`。
 - 当前浏览器端导出固定为 15 秒；采用 `MediaRecorder` 合成 canvas 与 WebAudio，编码格式由 Chrome 能力决定（MP4 / WebM）
 - 值得继续推的两个方向：① 按曲风自动推荐"效果 × 驱动 × 参数"的预设包；② 多图按小节切换的节奏剪辑（参考组图玩法）
 
-## 9. 智能动态贴纸（smartStickers）
+## 9. 动态时钟（dynamicClock）
 
-The **智能动态贴纸** group contains **Rotating sunshine** and **Rotating text clock**. Selecting a still photo starts with the clock, then selects sunshine only when an eligible object is prominent enough in the frame. Small background flowers, distant decorations and tiny sun disks are rejected even when recognized. Birthday candles require either a large standalone candle or spatial support from a prominent foreground cake. Umbrella effects, adapters and their runtime are removed.
+One full-frame **动态时钟** effect remains under `src/mdp/`. The outer white contour flows with smoothed real audio energy, bass and transient detail; its motion slows and settles in silence. Resting coverage is 95% of both frame dimensions and deformation stays inside those bounds. Outline depth is adjustable without changing word/hand timing.
 
-The clock always fills 95% of frame width and height, ignoring photo composition. Its outline and hand are white with a soft shadow; words can use soft colors, photo accents, white or a manual color. Stronger actual WebAudio onsets with local beat-grid phase correction advance the hand to the exact highlighted word (one beat per custom word by default), settle after 120ms, and hold between events. Timed lyric text and the hand share eight persistent slots and the same beat event. Sunshine retains image-adaptive ink; both effects support custom/timed text. The birthday-cake original stays in Materials; other review photos stay outside git.
+The white hand and active word share exact geometry and measured onset events. Default pacing is one verified beat per word, including fast 186 BPM material; the hand moves for 85ms, settles for 35ms, then holds. Words support custom copy or timed lyrics and soft colors, photo accents, white or manual ink. White strokes retain a soft dark shadow.
 
-Read [`src/mdp/README.md`](src/mdp/README.md) and [`src/mdp/TRIGGER-RULES.md`](src/mdp/TRIGGER-RULES.md). The two sticker styles are one feature, reviewed in one source branch/PR. The source PR does not merge or publish the public website; website synchronization requires separate authorization.
+The candle/sunshine renderer and semantic image-matching worker are removed. Every photo keeps the clock, without an additional recognition model or foreground checks. The approved birthday photograph remains in Materials; unapproved review photos remain outside git. Read [`src/mdp/README.md`](src/mdp/README.md) and the English [`src/mdp/MOTION-RULES.md`](src/mdp/MOTION-RULES.md).
+
+This is one feature in the existing source PR. Keep it Open and unmerged; updating the source PR does not authorize public website publication.
