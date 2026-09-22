@@ -231,6 +231,10 @@ details.adv>summary:hover{color:var(--ink)}
 .effect-copy input{box-sizing:border-box;flex:1;min-width:0;height:30px;border:1px solid rgba(255,255,255,.12);border-radius:8px;background:rgba(0,0,0,.18);color:var(--ink);padding:5px 8px;font:inherit;font-size:11px}
 .effect-copy input:focus{outline:1px solid rgba(255,255,255,.6)}
 .copy-status{min-width:0;font-size:10px;color:var(--ink2);line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@font-face{font-family:Silkscreen;src:url('effects/color-bars/fonts/Silkscreen-Regular.ttf') format('truetype');font-display:swap}
+.p-colorPhoto[hidden],.p-clash[hidden]{display:none}.color-photo-control{grid-column:1/-1;display:grid;grid-template-columns:46px minmax(0,1fr);gap:5px 9px;align-items:center;min-width:0}.color-photo-control img{width:46px;height:60px;object-fit:cover;grid-row:1/4;border-radius:4px}.color-photo-control select,.color-photo-control input[type=range],.color-replace{grid-column:2;min-width:0;width:100%}.color-replace{justify-self:start;font-size:9px}.p-colorRules{grid-column:1/-1}.color-rules{grid-column:1/-1;font-size:11px;color:var(--ink2);line-height:1.8}.color-count{display:flex;gap:4px}.p-colorCount .color-count{grid-column:1/-1}#colorBarPhotos{flex:none;margin-bottom:7px}#colorBarPhotos[hidden]{display:none}.color-picker-layout{display:grid;grid-template-columns:126px minmax(0,1fr);gap:10px;align-items:stretch}.color-picker-count,.color-picker-order{min-width:0}.color-picker-count{padding-right:10px;border-right:1px solid var(--hair)}.color-picker-label{display:block;margin-bottom:5px;font-size:10px;color:var(--ink2)}.color-picker-count .chip{min-width:0;flex:1;padding:4px 3px}.color-picker-order-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.color-picker-hint{font-size:9px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.color-photo-slots{display:flex;gap:6px}.color-photo-slot{position:relative;display:flex;align-items:center;justify-content:center;border:1px solid var(--hair2);border-radius:8px;min-width:0;flex:1;height:38px;padding:3px 4px 3px 22px;color:var(--ink2);overflow:hidden}.color-photo-slot strong{position:absolute;left:7px;font-size:10px}.color-photo-slot.on{border-color:var(--accent);color:var(--accent);background:rgba(126,240,180,.08);box-shadow:0 0 0 1px rgba(126,240,180,.08) inset}.color-photo-slot img{width:100%;height:30px;border-radius:5px;object-fit:cover}.color-picker-tip{font-size:10px;color:var(--ink2);margin-top:5px}body.color-bars-active .material-card>.body{overflow-y:auto;display:block}body.color-bars-active .material-card .photos{overflow:visible;min-height:92px;max-height:none}.color-slot-badge{position:absolute;right:3px;top:3px;background:#fff;color:#111;border-radius:4px;font-size:10px;padding:0 4px;font-weight:700}
+.single-punch-panel{grid-column:1/-1;padding:13px;border:1px solid rgba(255,255,255,.12);border-radius:12px;margin-bottom:5px;background:rgba(255,255,255,.025)}.single-punch-status{font-size:12px;color:var(--ink);line-height:1.7}.single-punch-info{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:10px 0;color:var(--ink3);font-size:11px}#singlePunchSwatches{display:flex;gap:5px}#singlePunchSwatches span{width:17px;height:17px;border-radius:50%;border:1px solid rgba(255,255,255,.2)}.single-punch-actions{display:flex;gap:6px;flex-wrap:wrap}.single-punch-actions .chip{font-size:11px}
+.mdp-match{border-top:1px solid var(--hair);margin-top:6px;padding-top:6px;font-size:11px;line-height:1.5}.mdp-match[hidden]{display:none}.mdp-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:3px 0}.mdp-status{color:var(--ink2);font-size:10px;line-height:1.4}.mdp-reason{margin-top:6px;color:#dfdbd0;font-size:10px;line-height:1.4}.mdp-rules article{border-top:1px solid var(--hair);padding:12px 0}.mdp-rules h4{margin:0 0 7px;font-size:13px}.mdp-rules p{font-size:12px;line-height:1.65;color:var(--ink2);margin:6px 0}.mdp-tests{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.mdp-tests button{text-align:left;min-width:0}.mdp-tests img{width:100%;aspect-ratio:9/16;object-fit:cover;border-radius:9px}.mdp-tests span{font-size:10px;display:block;margin:5px 0}#mdpEvidence{font-size:10px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:300px;overflow:auto}#mdpChoices{max-height:62px;overflow:auto}.effect-card:has(.mdp-match:not([hidden])) .fx{max-height:70px}.fx button[hidden]{display:none}.fxtabs{display:flex;gap:5px;margin-bottom:7px}
 </style>
 </head>
 <body>
@@ -316,6 +320,7 @@ details.adv>summary:hover{color:var(--ink)}
     <section class="card grow material-card expanded" id="materialCard">
       <header><h2>素材</h2><span class="meta" id="photoCount"></span><span class="meta seg-status" id="segState" data-state="idle">主体识别待机</span><button class="act" id="photoDirBtn" style="margin-left:8px">文件夹</button><button class="act panel-fold" id="materialFold" aria-expanded="true">收起</button></header>
       <div class="body">
+        <div id="colorBarPhotos" hidden></div>
         <div class="filters" id="filters"></div>
         <div class="photos" id="photos"></div>
         <input type="file" id="photoFile" accept="image/*,video/*" multiple hidden><input type="file" id="photoDir" webkitdirectory multiple hidden>
@@ -340,8 +345,14 @@ details.adv>summary:hover{color:var(--ink)}
 
 <script>
 const PRESETS = /*__PRESETS__*/[];
+const COLOR_BAR_SAMPLES = /*__COLOR_BAR_SAMPLES__*/[];
 </script>
+<script src="effects/single-punch/effect.js"></script>
 <script src="rhythm-puzzle.js"></script>
+<script src="effects/color-bars/effect.js"></script>
+<script src="punch-shapes.js"></script>
+<script src="punch-studio.js"></script>
+<script src="punch-effect.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

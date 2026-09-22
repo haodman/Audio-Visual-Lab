@@ -26,6 +26,17 @@ for f in sorted(glob.glob('models/h*.jpg')):
     name, tags = horizontal_meta[os.path.basename(f)]
     presets.append({"name": name, "tags": tags,
                     "src": "data:image/jpeg;base64," + base64.b64encode(open(f, 'rb').read()).decode()})
+
+# Keep familiar portraits external so they are only downloaded after the
+# dedicated private gallery tab is opened.
+for f in sorted(glob.glob('models/familiar/mdp-*.jpg')):
+    filename = os.path.basename(f)
+    number = int(os.path.splitext(filename)[0].split('-')[-1])
+    presets.append({
+        "name": f"熟人 {number:02d}",
+        "tags": ["熟人"],
+        "src": "src/models/familiar/" + filename,
+    })
 pack_manifest = os.path.join(here, 'models', 'eagle-pack', 'manifest.json')
 if os.path.exists(pack_manifest):
     with open(pack_manifest, encoding='utf-8') as fh:
@@ -60,10 +71,16 @@ if os.path.exists(music_manifest):
 music_arr = json.dumps(music_library, ensure_ascii=False)
 
 html = open('app.html', encoding='utf-8').read()
-rhythm_puzzle_js = open('rhythm-puzzle.js', encoding='utf-8').read()
 js = open('app.js', encoding='utf-8').read()
 js = js.replace('/*__PACK_TRACKS__*/[]', music_arr)
-html = html.replace('/*__PRESETS__*/[]', arr).replace('<script src="rhythm-puzzle.js"></script>\n<script src="app.js"></script>', '<script>\n' + rhythm_puzzle_js + '\n' + js + '\n</script>')
+color_samples = [{'name': name, 'src': 'data:image/jpeg;base64,' + base64.b64encode(open('effects/color-bars/assets/' + filename, 'rb').read()).decode()} for name, filename in [('橘子 · 示例', 'orange.jpg'), ('人像 · 示例', 'portrait.jpg'), ('泳池 · 示例', 'pool.jpg')]]
+html = html.replace('/*__PRESETS__*/[]', arr).replace('/*__COLOR_BAR_SAMPLES__*/[]', json.dumps(color_samples, ensure_ascii=False))
+html = html.replace("effects/color-bars/fonts/Silkscreen-Regular.ttf", 'data:font/ttf;base64,' + base64.b64encode(open('effects/color-bars/fonts/Silkscreen-Regular.ttf', 'rb').read()).decode())
+modules = ['effects/single-punch/effect.js', 'rhythm-puzzle.js', 'effects/color-bars/effect.js', 'punch-shapes.js', 'punch-studio.js', 'punch-effect.js', 'app.js']
+for module in modules:
+    source = js if module == 'app.js' else open(module, encoding='utf-8').read()
+    html = html.replace('<script src="' + module + '"></script>', '<script>\n' + source + '\n</script>')
 out = os.path.join(os.path.dirname(here), 'music-fx-lab.html')
 open(out, 'w', encoding='utf-8').write(html)
+open(os.path.join(os.path.dirname(here), 'index.html'), 'w', encoding='utf-8').write(html)
 print('built', out, round(len(html) / 1e6, 2), 'MB')

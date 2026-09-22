@@ -33,14 +33,21 @@ function coverDraw(c, img, iw, ih) {
   if (ratio > .82) { const bg = Math.max(W / iw, H / ih), bw = iw * bg, bh = ih * bg; c.save(); c.filter = 'blur(28px) brightness(.58) saturate(.82)'; c.drawImage(img, (W - bw) / 2, (H - bh) / 2, bw, bh); c.restore(); c.fillStyle = 'rgba(0,0,0,.1)'; c.fillRect(0, 0, W, H); const fit = Math.min(W / iw, H / ih), fw = iw * fit, fh = ih * fit; c.drawImage(img, (W - fw) / 2, (H - fh) / 2, fw, fh); }
   else { const s = Math.max(W / iw, H / ih), dw = iw * s, dh = ih * s; c.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh); }
 }
+function sourceFingerprint() {
+  const c=document.createElement('canvas');c.width=12;c.height=20;const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(src,0,0,c.width,c.height);const d=g.getImageData(0,0,c.width,c.height).data;let h=2166136261;
+  for(let i=0;i<d.length;i+=3){h^=d[i];h=Math.imul(h,16777619);}return (h>>>0).toString(36);
+}
 function setImage(img) {
   S.media = img; S.isVideo = false; S.cache = {}; S.srcKey = (S.srcKey || 0) + 1; S.segRequestedAt = performance.now();
   sctx.clearRect(0, 0, W, H); coverDraw(sctx, img, img.naturalWidth || img.width, img.naturalHeight || img.height);
+  S.mediaKey=sourceFingerprint();
   $('#storyimg').src = img.src; drawPeek();
-  // All still-image effects share the same MODNet matting capability. Each
-  // framing stores its own output, but model/version/edge treatment are one.
-  setSeg('MODNet 高清抠像 · 启动中…', 'working');
-  setTimeout(() => refineSubjectHQ(S.fx === 'subjectSplit' ? 'split' : 'full'), 30);
+  // Segmentation is deliberately lazy: changing a library image should not
+  // preprocess every asset. Only the selected effect requests its own model.
+  if (S.fx === 'objectPulse') { setSeg('主体闪拍 · 快速预览…', 'working'); setTimeout(() => prepareObjectPulseRegions(FX.objectPulse.state), 30); }
+  else if (S.fx === 'subjectSplit') { setSeg('MODNet 高清抠像 · 启动中…', 'working'); setTimeout(() => refineSubjectHQ('split'), 30); }
+  else if (['punchSymbols', 'bars', 'stretchBands', 'contourField', 'textWrap'].includes(S.fx)) { setSeg('MODNet 高清抠像 · 启动中…', 'working'); setTimeout(() => refineSubjectHQ('full'), 30); }
+  else setSeg('素材已就绪 · 未启动主体分析', 'idle');
 }
 function setVideo(url) {
   const v = document.createElement('video'); v.src = url; v.loop = true; v.muted = true; v.playsInline = true;
@@ -135,7 +142,36 @@ function rgbSplit(c, off, dy = 0) {
 const MPURL = 'https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1.1675465747/';
 const MP = { state: 'idle', seg: null, pending: null, queued: false, videoFrames: 0, videoUIAt: 0 };
 const HQ = { state: 'idle', model: null, processor: null, mod: null, busy: false, queuedMode: null };
+const OBJ = { state: 'idle', model: null, processor: null, mod: null, busy: false, sourceKey: -1, cache: new Map(), timer: 0, queued: false, cacheVersion: 2, db: null };
 function setSeg(t, state) { const e = $('#segState'); if (!e) return; e.textContent = t; e.dataset.state = state || (/✓|fps/.test(t) ? 'ok' : /估算|失败/.test(t) ? 'fallback' : /加载|识别|启动|排队/.test(t) ? 'working' : 'idle'); }
+
+function objectPulseCacheKey(mediaKey) { return `v${OBJ.cacheVersion}|${mediaKey}|${W}x${H}`; }
+function objectPulseDB() {
+  if (OBJ.db) return OBJ.db;
+  OBJ.db = new Promise((resolve, reject) => {
+    const req = indexedDB.open('music-fx-object-pulse', 1);
+    req.onupgradeneeded = () => { const db=req.result;if(!db.objectStoreNames.contains('masks'))db.createObjectStore('masks',{keyPath:'key'}); };
+    req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error);
+  });
+  return OBJ.db;
+}
+function canvasBlob(canvas) { return new Promise(resolve => canvas.toBlob(resolve, 'image/png')); }
+async function persistObjectPulseRegions(mediaKey, regions) {
+  try {
+    const masks=[];
+    for(const region of regions){const c=document.createElement('canvas');c.width=96;c.height=171;const g=c.getContext('2d');g.imageSmoothingEnabled=true;g.drawImage(region.mask,0,0,c.width,c.height);const blob=await canvasBlob(c);if(blob)masks.push(blob);}
+    if(!masks.length)return;const db=await objectPulseDB(),tx=db.transaction('masks','readwrite');
+    tx.objectStore('masks').put({key:objectPulseCacheKey(mediaKey),masks,usedAt:Date.now()});
+  } catch(e) { console.warn('Object mask cache write failed',e); }
+}
+async function restoreObjectPulseRegions(mediaKey) {
+  try {
+    const db=await objectPulseDB(),item=await new Promise((resolve,reject)=>{const tx=db.transaction('masks','readonly'),req=tx.objectStore('masks').get(objectPulseCacheKey(mediaKey));req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});
+    if(!item?.masks?.length)return null;const regions=[];
+    for(const blob of item.masks){const bitmap=await createImageBitmap(blob),mask=document.createElement('canvas');mask.width=W;mask.height=H;const kg=mask.getContext('2d');kg.imageSmoothingEnabled=true;kg.drawImage(bitmap,0,0,W,H);bitmap.close?.();const cut=document.createElement('canvas');cut.width=W;cut.height=H;const cg=cut.getContext('2d');cg.drawImage(src,0,0);cg.globalCompositeOperation='destination-in';cg.drawImage(mask,0,0);cg.globalCompositeOperation='source-over';regions.push({mask,cut});}
+    const tx=db.transaction('masks','readwrite');tx.objectStore('masks').put({...item,usedAt:Date.now()});return regions;
+  } catch(e) { console.warn('Object mask cache read failed',e); return null; }
+}
 
 async function refineSubjectHQ(mode = S.fx === 'subjectSplit' ? 'split' : 'full') {
   if (S.isVideo) return refineSubject();
@@ -856,10 +892,95 @@ function editorialHeadline(raw,size,x,y,pulse){
   ctx.restore();
 }
 
+// Lightweight multi-subject discovery for still images. The photo is analysed
+// once at a small resolution; playback only composites cached masks/cutouts.
+// Candidate regions are ranked by area, local colour contrast, edge closure
+// and a restrained centre prior so large backgrounds and tiny texture noise
+// do not become rhythmic subjects.
+function buildObjectPulseRegions(s, amount) {
+  const key=S.srcKey+'|'+amount;if(s.regionKey===key&&s.regions?.length)return s.regions;
+  const w=72,h=128,N=w*h,small=document.createElement('canvas');small.width=w;small.height=h;
+  const g=small.getContext('2d',{willReadFrequently:true});g.drawImage(src,0,0,w,h);const im=g.getImageData(0,0,w,h),d=im.data,seen=new Uint8Array(N);
+  let ar=0,ag=0,ab=0,lum=0,lum2=0;for(let i=0;i<N;i++){const r=d[i*4],gg=d[i*4+1],b=d[i*4+2],l=r*.2126+gg*.7152+b*.0722;ar+=r;ag+=gg;ab+=b;lum+=l;lum2+=l*l;}ar/=N;ag/=N;ab/=N;lum/=N;const variance=Math.max(0,lum2/N-lum*lum),components=[];
+  const near=(a,b)=>{const dr=d[a*4]-d[b*4],dg=d[a*4+1]-d[b*4+1],db=d[a*4+2]-d[b*4+2];return dr*dr*.8+dg*dg+db*db*.7<3100;};
+  for(let seed=0;seed<N;seed++){if(seen[seed])continue;const queue=[seed],pixels=[];seen[seed]=1;let qi=0,x0=w,y0=h,x1=0,y1=0,rr=0,gg=0,bb=0,border=0;
+    while(qi<queue.length){const i=queue[qi++],x=i%w,y=(i/w)|0;pixels.push(i);x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y);rr+=d[i*4];gg+=d[i*4+1];bb+=d[i*4+2];if(x===0||y===0||x===w-1||y===h-1)border++;
+      const ns=[i-1,i+1,i-w,i+w];for(const n of ns){if(n<0||n>=N||seen[n])continue;const nx=n%w,ny=(n/w)|0;if(Math.abs(nx-x)+Math.abs(ny-y)!==1)continue;if(near(i,n)){seen[n]=1;queue.push(n);}}}
+    const area=pixels.length/N;if(area<.004||area>.24)continue;rr/=pixels.length;gg/=pixels.length;bb/=pixels.length;const contrast=Math.hypot(rr-ar,gg-ag,bb-ab)/220,cx=(x0+x1)/2/w,cy=(y0+y1)/2/h,centre=1-Math.min(1,Math.hypot(cx-.5,cy-.5)/.72),compact=pixels.length/Math.max(1,(x1-x0+1)*(y1-y0+1)),edgePenalty=border/Math.max(1,pixels.length),sizeScore=Math.exp(-Math.pow((Math.log(area+.002)-Math.log(.055))/1.22,2));components.push({pixels,score:sizeScore*1.7+contrast*1.15+centre*.36+compact*.5-edgePenalty*1.5,area});}
+  components.sort((a,b)=>b.score-a.score);const autoCount=clamp(Math.round(4+Math.sqrt(variance)/18),4,8),target=amount==='自动'?autoCount:Number(amount)||6,chosen=components.slice(0,target),regions=[];
+  for(const c of chosen){const mc=document.createElement('canvas');mc.width=w;mc.height=h;const mg=mc.getContext('2d'),mi=mg.createImageData(w,h);for(const i of c.pixels){mi.data[i*4]=mi.data[i*4+1]=mi.data[i*4+2]=255;mi.data[i*4+3]=255;}mg.putImageData(mi,0,0);const mask=document.createElement('canvas');mask.width=W;mask.height=H;const kg=mask.getContext('2d');kg.imageSmoothingEnabled=true;kg.filter='blur(1.4px)';kg.drawImage(mc,0,0,W,H);kg.filter='none';const cut=document.createElement('canvas');cut.width=W;cut.height=H;const cg=cut.getContext('2d');cg.drawImage(src,0,0);cg.globalCompositeOperation='destination-in';cg.drawImage(mask,0,0);cg.globalCompositeOperation='source-over';regions.push({mask,cut});}
+  s.regionKey=key;s.regions=regions;s.active=[];s.hitWas=0;s.lastHit=-9;s.cursor=-1;if(!S.isVideo)setSeg(`多主体分析 · ${regions.length} 个选区 ✓`,'ok');return regions;
+}
+
+function objectPulseRegion(maskData, mw, mh) {
+  const mc=document.createElement('canvas');mc.width=mw;mc.height=mh;const mg=mc.getContext('2d'),mi=mg.createImageData(mw,mh);
+  for(let i=0;i<maskData.length;i++){mi.data[i*4]=mi.data[i*4+1]=mi.data[i*4+2]=255;mi.data[i*4+3]=maskData[i]?255:0;}mg.putImageData(mi,0,0);
+  const mask=document.createElement('canvas');mask.width=W;mask.height=H;const kg=mask.getContext('2d');kg.imageSmoothingEnabled=true;kg.filter='blur(.75px)';kg.drawImage(mc,0,0,W,H);kg.filter='none';
+  const cut=document.createElement('canvas');cut.width=W;cut.height=H;const cg=cut.getContext('2d');cg.drawImage(src,0,0);cg.globalCompositeOperation='destination-in';cg.drawImage(mask,0,0);cg.globalCompositeOperation='source-over';
+  return {mask,cut};
+}
+
+// SlimSAM runs once for the current uploaded still. A grid of positive prompts
+// produces independent object candidates from one shared image embedding; IoU
+// filtering removes repeated masks. Playback and parameter edits only reuse the
+// resulting canvases, so there is no per-frame inference or manual brushing.
+async function requestObjectPulseRegions(s) {
+  if(S.isVideo||!S.media)return;
+  const key=S.srcKey,mediaKey=S.mediaKey||sourceFingerprint();if(s.aiKey===key&&s.aiMode==='precise'&&s.aiRegions?.length)return;if(OBJ.busy){OBJ.queued=true;return;}
+  OBJ.busy=true;OBJ.sourceKey=key;
+  try{
+    if(!OBJ.model){
+      OBJ.state='loading';setSeg('通用主体模型 · 首次下载…','working');
+      OBJ.mod=HQ.mod||await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2/+esm');
+      const {env,SamModel,AutoProcessor}=OBJ.mod;env.backends.onnx.wasm.proxy=false;
+      const progress_callback=p=>{if(p?.status==='progress'&&p.total)setSeg('通用主体模型 · '+Math.round(p.loaded/p.total*100)+'%','working');};
+      OBJ.model=await SamModel.from_pretrained('Xenova/slimsam-77-uniform',{progress_callback});
+      OBJ.processor=await AutoProcessor.from_pretrained('Xenova/slimsam-77-uniform',{progress_callback});OBJ.state='ready';
+    }
+    setSeg('当前图片 · 通用主体识别中…','working');
+    const image=await OBJ.mod.RawImage.fromURL(src.toDataURL('image/jpeg',.94)),inputs=await OBJ.processor(image),embeddings=await OBJ.model.get_image_embeddings(inputs);
+    const reshaped=inputs.reshaped_input_sizes[0],points=[];
+    for(let y=0;y<5;y++)for(let x=0;x<4;x++)points.push([(x+.5)/4*reshaped[1],(y+.5)/5*reshaped[0]]);
+    const P=points.length,input_points=new OBJ.mod.Tensor('float32',points.flat(),[1,P,1,2]),input_labels=new OBJ.mod.Tensor('int64',Array(P).fill(1n),[1,P,1]);
+    const outputs=await OBJ.model({...embeddings,input_points,input_labels}),post=await OBJ.processor.post_process_masks(outputs.pred_masks,inputs.original_sizes,inputs.reshaped_input_sizes),masks=post[0],dims=masks.dims,mw=dims[dims.length-1],mh=dims[dims.length-2],variants=dims[dims.length-3],plane=mw*mh,scores=outputs.iou_scores.data,candidates=[];
+    for(let p=0;p<P;p++){
+      let best=0;for(let v=1;v<variants;v++)if(scores[p*variants+v]>scores[p*variants+best])best=v;
+      const off=(p*variants+best)*plane,data=masks.data.slice(off,off+plane);let area=0,border=0;
+      for(let i=0;i<plane;i++)if(data[i]){area++;const x=i%mw,y=(i/mw)|0;if(x<2||y<2||x>mw-3||y>mh-3)border++;}
+      const ratio=area/plane;if(ratio<.008||ratio>.46)continue;
+      const signature=new Uint8Array(48*84);for(let y=0;y<84;y++)for(let x=0;x<48;x++)signature[y*48+x]=data[Math.min(mh-1,Math.floor((y+.5)*mh/84))*mw+Math.min(mw-1,Math.floor((x+.5)*mw/48))]?1:0;
+      candidates.push({data,signature,score:(scores[p*variants+best]||0)+Math.min(.22,ratio*.7)-border/Math.max(1,area)*.45});
+    }
+    candidates.sort((a,b)=>b.score-a.score);const chosen=[];
+    for(const c of candidates){let duplicate=false;for(const q of chosen){let inter=0,union=0;for(let i=0;i<c.signature.length;i++){if(c.signature[i]&&q.signature[i])inter++;if(c.signature[i]||q.signature[i])union++;}if(inter/Math.max(1,union)>.68){duplicate=true;break;}}if(!duplicate)chosen.push(c);if(chosen.length>=10)break;}
+    if(key!==S.srcKey||mediaKey!==S.mediaKey)return;
+    s.aiRegions=chosen.map(c=>objectPulseRegion(c.data,mw,mh));s.aiKey=key;s.aiMode='precise';s.regionKey='sam|'+key;s.regions=s.aiRegions;s.active=[];s.hitWas=0;s.lastHit=-9;s.cursor=-1;
+    if(!s.aiRegions.length)throw new Error('No usable masks');
+    OBJ.cache.set(mediaKey,s.aiRegions);if(OBJ.cache.size>12)OBJ.cache.delete(OBJ.cache.keys().next().value);persistObjectPulseRegions(mediaKey,s.aiRegions);
+    setSeg('实时主体分割 · '+s.aiRegions.length+' 个选区 ✓','ok');
+  }catch(e){console.warn('Object segmentation failed',e);OBJ.state='fail';if(key===S.srcKey){s.aiKey=key;s.aiMode='quick';s.aiRegions=buildObjectPulseRegions(s,'10');setSeg('精细分割失败 · 使用快速选区 '+s.aiRegions.length+' 个','fallback');}}
+  finally{OBJ.busy=false;if(OBJ.queued){OBJ.queued=false;clearTimeout(OBJ.timer);OBJ.timer=setTimeout(()=>{if(S.fx==='objectPulse')prepareObjectPulseRegions(s);},80);}}
+}
+
+async function prepareObjectPulseRegions(s){
+  if(S.isVideo||!S.media)return;clearTimeout(OBJ.timer);const key=S.srcKey,mediaKey=S.mediaKey||sourceFingerprint(),cached=OBJ.cache.get(mediaKey);
+  if(cached?.length){s.aiKey=key;s.aiMode='precise';s.aiRegions=cached;s.regions=cached;s.active=[];s.hitWas=0;s.lastHit=-9;s.cursor=-1;setSeg('主体分割缓存 · '+cached.length+' 个选区 ✓','ok');return;}
+  s.aiKey=-1;s.aiMode='quick';s.aiRegions=buildObjectPulseRegions(s,'10');s.aiKey=key;s.regions=s.aiRegions;setSeg('快速选区 · '+s.aiRegions.length+' 个 · 精细识别待机','working');
+  const stored=await restoreObjectPulseRegions(mediaKey);
+  if(key!==S.srcKey||mediaKey!==S.mediaKey||S.fx!=='objectPulse')return;
+  if(stored?.length){OBJ.cache.set(mediaKey,stored);s.aiKey=key;s.aiMode='precise';s.aiRegions=stored;s.regionKey='persisted|'+key;s.regions=stored;s.active=[];s.hitWas=0;s.lastHit=-9;s.cursor=-1;setSeg('本地主体缓存 · '+stored.length+' 个选区 ✓','ok');return;}
+  OBJ.timer=setTimeout(()=>{if(S.fx==='objectPulse'&&S.srcKey===key)requestObjectPulseRegions(s);},700);
+}
+
+function objectPulseRegions(s,amount){
+  if(s.aiKey!==S.srcKey){setTimeout(()=>prepareObjectPulseRegions(s),0);return [];}
+  const all=s.aiRegions||[],target=amount==='自动'?clamp(all.length,4,8):Number(amount)||6;return all.slice(0,target);
+}
+
 const FX = {
   none: { name: '原图', icon: '🖼️', desc: '无效果，仅对照', params: [], draw() { ctx.drawImage(src, 0, 0); } },
 
-  glitch: { name: '碎块位移', icon: '🧩', desc: '块错位 · RGB · 网点', hint: '复刻线上发布版：Kick 触发方块采样错位与 RGB 分离，能量叠加半调网点，Hi-hat 瞬态点亮星光。',
+  glitch: { name: '碎块位移', icon: '🧱', desc: '块错位 · RGB · 网点', hint: '复刻线上发布版：Kick 触发方块采样错位与 RGB 分离，能量叠加半调网点，Hi-hat 瞬态点亮星光。',
     params: [R('size','块大小',30,200,90,1),R('shift','位移强度',0,1,.5),R('rgb','RGB 分离',0,1,.4),R('ht','网点覆盖',0,1,.5),R('spark','星光',0,1,.5),D('drv','kick',['kick','snare','beat'])],
     state: { blocks: [], sparks: [], last: 0 },
     draw(f,p,t) { const s=this.state,sep=f.bass*p.rgb*16+f.dropHold*10;
@@ -930,9 +1051,9 @@ const FX = {
     params: [Sel('copy', '文字来源', ['自定义文字', '自动歌词'], '自动歌词'), T('text', '自定义文字', 'just another day / caught in the moment / let me stay here a little longer'), Sel('font', '字体风格', ['窄体海报', '无衬线粗体', '衬线编辑', '等宽科技'], '窄体海报'), Sel('colorMode', '文字取色', ['参考粉色', '图片取色', '反差取色', '手动颜色'], '参考粉色'), C('col', '手动颜色', '#ff4fa3'), Sel('background', '画面风格', ['参考黑白', '保留原色'], '参考黑白'),
       R('size', '基础字号', .65, 1.65, .86), R('emphasis', '局部大词', 1.5, 4.8, 3.35), R('offset', '轮廓距离', 8, 72, 30, 1), R('gap', '词间距', 2, 22, 8, 1), R('speed', '滚动速度', .05, 1.5, .5), R('lyricOffset', '歌词校准', -1.5, 1.5, 0, .05), R('pulse', '律动强度', 0, 2, .5), D('drv', 'beat', ['beat', 'kick', 'high', 'energy'])],
     state: { path: null, key: '', offset: 0, pulse: 0, focus: 0, was: 0, lastHit: -9, lastT: null, lyric: '', travel: 0, travelTarget: 0, lyricAbs: -1 },
-    draw(f, p, t) { const s = this.state, dt = clamp(t - (s.lastT == null ? t : s.lastT), 0, .06); s.lastT = t;
+    draw(f, p, t) { const s = this.state, frameDt = clamp(t - (s.lastT == null ? t : s.lastT), 0, .06), dt = S.playing ? frameDt : 0; s.lastT = t;
       ctx.save(); if (p.background === '参考黑白') ctx.filter = 'grayscale(1) contrast(1.05)'; ctx.drawImage(src, 0, 0); ctx.restore();
-      const lyricState = p.copy === '自动歌词' ? timedLyricAt(t + (p.lyricOffset || 0)) : null, selected = p.copy === '自动歌词' ? (lyricState?.text || '暂无歌词') : p.text, raw = (selected || '').trim(), tokens = wrapTokens(raw), pathKey = S.srcKey + '|' + Math.round(p.offset) + '|' + !!S.cache.subjHQ;
+      const lyricState = p.copy === '自动歌词' ? timedLyricAt(f.t + (p.lyricOffset || 0)) : null, selected = p.copy === '自动歌词' ? (lyricState?.text || '暂无歌词') : p.text, raw = (selected || '').trim(), tokens = wrapTokens(raw), pathKey = S.srcKey + '|' + Math.round(p.offset) + '|' + !!S.cache.subjHQ;
       if (s.key !== pathKey || !s.path) { s.key = pathKey; s.path = buildWrapPath(p.offset); }
       if (lyricState && raw) { s.lyric = raw; s.focus = Math.min(tokens.length - 1, Math.max(0, lyricState.word)); }
       const hit = Math.max(f[p.drv] || 0, f.kick * .96, f.beat * .8, f.snare * .55), audible = S.playing && (f.energy > .045 || f.bass > .06 || f.high > .05);
@@ -1050,6 +1171,20 @@ const FX = {
     } },
 
   rhythmPuzzle: createRhythmPuzzleEffect(),
+
+  objectPulse: {name:'主体闪拍',icon:'⚡',desc:'通用物体分割 · 依次闪烁',hint:'新图片先立即显示快速选区，再由通用分割模型后台精修；精确蒙版会持久保存在当前浏览器中，刷新或再次选择同一张图无需重新计算。',
+    params:[Sel('amount','主体数量',['自动','4','6','8','10'],'自动'),Sel('style','闪烁样式',['曝光＋纯色','增加曝光','纯色填充'],'曝光＋纯色'),Sel('colorMode','填充颜色',['图片代表色','图片亮色','图片深色','经典白色','手动颜色'],'图片代表色'),C('col','手动颜色','#F3FF69'),R('strength','闪烁强度',.4,2,1.25),R('duration','闪烁时长',.08,.4,.3),R('dim','背景压暗',0,.45,0),R('burst','每拍主体',1,2,1,1),D('drv','beat',['beat','kick','snare','hat'])],
+    state:{regions:[],aiRegions:[],aiKey:-1,active:[],cursor:-1,lastHit:-9,hitWas:0},
+    draw(f,p,t){const s=this.state;ctx.drawImage(src,0,0);if(S.isVideo)return;const regions=objectPulseRegions(s,p.amount);if(!regions.length)return;
+      const hit=Math.max(f[p.drv]||0,(f.kick||0)*.86,(f.snare||0)*.68,(f.beat||0)*.72),threshold=p.drv==='hat'?.5:.42;
+      if(S.playing&&hit>threshold&&(s.hitWas||0)<=threshold&&t-s.lastHit>.105){s.lastHit=t;s.born=t;s.cursor=(s.cursor+1)%regions.length;const count=Math.min(regions.length,Math.round(p.burst)+(hit>.82&&p.burst>1?1:0));s.active=[];for(let i=0;i<count;i++)s.active.push((s.cursor+i)%regions.length);s.cursor=(s.cursor+count-1)%regions.length;}s.hitWas=hit;
+      const age=t-(s.born??-9);if(age<0||age>p.duration||!s.active.length)return;const attack=clamp(age/.018,0,1),release=Math.exp(-Math.max(0,age-.034)/Math.max(.025,p.duration*.31)),pulse=attack*attack*(3-2*attack)*release*p.strength,pal=imagePalette(),ink=p.colorMode==='图片亮色'?pal.soft:p.colorMode==='图片深色'?pal.deep:p.colorMode==='经典白色'?'#F8F5ED':p.colorMode==='手动颜色'?(p.col||'#F3FF69'):splitAccent();
+      if(p.dim>0){ctx.fillStyle=`rgba(0,0,0,${clamp(p.dim*pulse*.9,0,.5)})`;ctx.fillRect(0,0,W,H);}
+      s.overlay??=document.createElement('canvas');s.overlay.width=W;s.overlay.height=H;const og=s.overlay.getContext('2d');
+      for(const idx of s.active){const region=regions[idx];if(!region)continue;if(p.style!=='纯色填充'){ctx.save();ctx.globalCompositeOperation='screen';ctx.globalAlpha=clamp(pulse*(p.style==='曝光＋纯色'?.88:1),0,1);ctx.filter=`brightness(${1.7+pulse*1.55}) contrast(${1.02+pulse*.16}) saturate(${1.05+pulse*.2})`;ctx.drawImage(region.cut,0,0);ctx.restore();}
+        if(p.style!=='增加曝光'){og.clearRect(0,0,W,H);og.globalCompositeOperation='source-over';og.fillStyle=ink;og.fillRect(0,0,W,H);og.globalCompositeOperation='destination-in';og.drawImage(region.mask,0,0);og.globalCompositeOperation='source-over';ctx.save();ctx.globalAlpha=clamp(pulse*(p.style==='曝光＋纯色'?.58:1),0,1);ctx.drawImage(s.overlay,0,0);ctx.restore();}}
+      ctx.globalAlpha=1;ctx.filter='none';
+    } },
 
   signalPoster: {name:'失真海报',icon:'📺',desc:'图文叠排 · 重音信号撕裂',hint:'同一张照片在三种海报构图间切换。轻扫描线常驻，重音触发短促横带错位，随后恢复清晰；每 4 或 8 拍换景。支持短句和当前歌词，暂停定格。',
     params:[Sel('copy','文字来源',['自定义文字','自动歌词'],'自定义文字'),T('text','文案','MAKE / SOME / NOISE'),R('tear','失真强度',0,1,.65),R('lines','扫描线',0,1,.35),Sel('pace','构图切换',['每4拍','每8拍','固定'],'每8拍'),C('ink','强调色','#e42b48')],state:{},
@@ -1175,23 +1310,28 @@ const FX = {
   subjectSplit: {
     name: '上下分屏', icon: '✂️', desc: '文字剪影 × 抠图主体 × 歌词掉落',
     hint: '适配横图/宽幅人物图：上半保留环境并把主体变成由歌词填满的纯色剪影；下半为取色纸张背景和真实抠图主体。上下使用完全相同的裁切与比例。素材仅做筛选提示，仍由你手动选择。',
-    params: [Sel('copy', '文字来源', ['自定义文字', '自动歌词'], '自定义文字'), T('text', '自定义文案', "don't you want to / be the one / when you go / nowhere else to go"),
+    params: [Sel('copy', '文字来源', ['自定义文字', '自动歌词'], '自动歌词'), T('text', '自定义文案', "don't you want to / be the one / when you go / nowhere else to go"),
       Sel('bg', '背景', ['图片取色', '手动纯色', '深色取色'], '图片取色'), C('col', '手动颜色', '#efefa9'),
-      R('type', '字体/符号大小', .6, 2, 1.1), R('motion', '律动幅度', 0, 2, 1), R('fall', '掉落速度', .35, 1.8, .7), R('stars', '星点数量', 0, 1, .38), R('move', '主体律动', 0, 1, .18), D('drv', 'bass', ['bass', 'kick', 'beat', 'energy'])],
-    state: { hit: 0, last: -9, lastDrop: -9, word: 0, drops: [], sparks: [], inside: [], nodes: [], insideKey: '', tm: null, plate: null, topSub: null, bottomSub: null },
+      R('type', '字体/符号大小', .4, 2, .5), R('motion', '律动幅度', 0, 2, 1.5), R('fall', '掉落速度', .18, 1.8, .28), R('stars', '星点数量', 0, 1, .2), R('move', '主体律动', 0, 1, 1), D('drv', 'bass', ['bass', 'kick', 'beat', 'energy'])],
+    state: { hit: 0, last: -9, lastDrop: -9, lastFrame: null, prevKick: 0, prevSnare: 0, prevHat: 0, prevBeat: 0, lowHit: 0, midHit: 0, highHit: 0, beatHit: 0, word: 0, drops: [], sparks: [], inside: [], nodes: [], insideKey: '', tm: null, plate: null, topSub: null, bottomSub: null },
     draw(f, p, t) { const s = this.state, cut = Math.round(H * .5), pal = imagePalette(), frame = splitFrame(), sub = S.cache.splitSub, sb = sub ? splitSubjectBounds(sub) : { x0: W * .2, y0: 12, x1: W * .8, y1: cut - 12 };
+      const dt = s.lastFrame == null ? 1 / 60 : clamp(t - s.lastFrame, 0, .08); s.lastFrame = t;
+      const kickEdge = f.kick > .46 && s.prevKick <= .46, snareEdge = f.snare > .42 && s.prevSnare <= .42, hatEdge = (f.hat > .38 || f.high > .62) && s.prevHat <= .38, beatEdge = f.beat > .62 && s.prevBeat <= .62;
+      if (kickEdge) s.lowHit = 1; if (snareEdge) s.midHit = 1; if (hatEdge) s.highHit = 1; if (beatEdge) s.beatHit = 1;
+      s.prevKick = f.kick; s.prevSnare = f.snare; s.prevHat = Math.max(f.hat, f.high); s.prevBeat = f.beat;
+      s.lowHit *= Math.exp(-dt * 5.2); s.midHit *= Math.exp(-dt * 7.2); s.highHit *= Math.exp(-dt * 10.5); s.beatHit *= Math.exp(-dt * 8.2);
       const topSub = s.topSub || (s.topSub = document.createElement('canvas')), bottomSub = s.bottomSub || (s.bottomSub = document.createElement('canvas')); topSub.width = bottomSub.width = W; topSub.height = bottomSub.height = H;
       const ta = topSub.getContext('2d'), ba = bottomSub.getContext('2d'); ta.clearRect(0, 0, W, H); ba.clearRect(0, 0, W, H);
       if (sub) { ta.drawImage(sub, 0, 0, W, cut); const edge = ta.getImageData(0, 0, W, cut); for (let i = 3; i < edge.data.length; i += 4) { let a = clamp((edge.data[i] / 255 - .045) / .72, 0, 1); a = a * a * (3 - 2 * a); edge.data[i] = Math.round(a * 255); } ta.putImageData(edge, 0, 0); ba.drawImage(sub, 0, cut, W, H - cut); }
       const custom = (p.text || '').split(/[\/\n|,，]+/).map(x => x.trim()).filter(Boolean), liveLyric = activeLyricAt(t).trim();
       const phrases = p.copy === '自动歌词' ? [liveLyric || '暂无歌词'] : custom.length ? custom : ['ON LOOP'];
-      const active = phrases[s.word % phrases.length] || phrases[0], pulse = Math.max(f.beat, f.kick);
+      const active = phrases[s.word % phrases.length] || phrases[0], pulse = Math.max(f.beat, f.kick, f.snare * .9, s.lowHit, s.midHit * .82, s.beatHit);
       if ((pulse > .55 || (!S.playing && t - s.last > 1.25)) && t - s.last > .28) { s.last = t; s.word++; s.hit = 1; }
       if ((pulse > .62 || (!S.playing && t - s.lastDrop > 2.8)) && t - s.lastDrop > 2.8) { s.lastDrop = t;
         const line = p.copy === '自动歌词' ? (liveLyric || '暂无歌词') : phrases[s.word % phrases.length];
         const side = Math.random() < .5;
         s.drops.push({ text: line, x: side ? rnd(22, W * .24) : rnd(W * .62, W * .76), y: cut + rnd(-8, 12), vy: rnd(22, 34), rot: rnd(-.035, .035), born: t, life: rnd(4.5, 5.8), sizeScale: rnd(.88, 1.14), side }); s.drops = s.drops.slice(-2);
-        const count = Math.round(1 + p.stars * 4); for (let i = 0; i < count; i++) s.sparks.push({ x: rnd(18, W - 18), y: cut + rnd(-20, 12), vy: rnd(34, 74), vx: rnd(-8, 8), born: t, life: rnd(2.5, 4.2), zScale: rnd(.78, 1.18), ph: rnd(0, 7) }); s.sparks = s.sparks.slice(-14); }
+        const count = Math.round(3 + p.stars * 9); for (let i = 0; i < count; i++) s.sparks.push({ x: rnd(18, W - 18), y: cut + rnd(-20, 12), vy: rnd(28, 62), vx: rnd(-11, 11), born: t, life: rnd(3.2, 5), zScale: rnd(.9, 1.5), ph: rnd(0, 7) }); s.sparks = s.sparks.slice(-28); }
       s.hit *= .86;
       const bg = p.bg === '手动纯色' ? p.col : p.bg === '深色取色' ? pal.deep : splitAccent(), ink = p.bg === '深色取色' ? '#f5f3ee' : pal.deep;
 
@@ -1204,24 +1344,24 @@ const FX = {
       const copyPool = (p.copy === '自动歌词' ? [liveLyric || '暂无歌词'] : custom.length ? custom : ['ON LOOP']).flatMap(q => { const ws = q.split(/\s+/).filter(Boolean); return ws.length > 1 ? ws : [q]; });
       const bx0 = clamp(sb.x0, 12, W - 40), bx1 = clamp(sb.x1, bx0 + 30, W - 12), by0 = clamp(sb.y0, 12, cut - 30), by1 = clamp(sb.y1, by0 + 24, cut - 10);
       const insideArea = Math.max(1, (bx1 - bx0) * (by1 - by0)), insideN = clamp(Math.round(insideArea / (1900 - p.type * 280)), 72, 112), insideKey = S.srcKey + '|' + copyPool.join('|') + '|' + Math.round(p.type * 10) + '|' + Math.round(bx0) + '|' + insideN;
-      if (s.insideKey !== insideKey || s.inside.length !== insideN) { const cols = Math.max(7, Math.round(Math.sqrt(insideN * (bx1 - bx0) / Math.max(1, by1 - by0)))), rows = Math.ceil(insideN / cols); s.insideKey = insideKey; s.inside = Array.from({ length: insideN }, (_, i) => { const row = Math.floor(i / cols), col = i % cols, targetX = bx0 + (col + .5) * (bx1 - bx0) / cols, targetY = by0 + (row + .5) * (by1 - by0) / rows; return { text: copyPool[i % copyPool.length], x: targetX + rnd(-4, 4), y: by0 - 12 - row * rnd(5, 9), targetX, targetY, vx: rnd(-.2, .2), vy: rnd(5.4, 8.2), z: rnd(.72, 1), ph: rnd(0, 7), angle: rnd(-.025, .025), va: 0, pulse: 0, delay: rnd(0, .05), entered: false, born: t, hw: 20 }; }); const spots = [[.22,.2],[.72,.22],[.48,.45],[.22,.68],[.74,.7]]; s.nodes = spots.map((v, i) => ({ x: bx0 + v[0] * (bx1 - bx0), y: by0 + v[1] * (by1 - by0), band: i % 4, ph: i * 1.27 })); }
+      if (s.insideKey !== insideKey || s.inside.length !== insideN) { const cols = Math.max(7, Math.round(Math.sqrt(insideN * (bx1 - bx0) / Math.max(1, by1 - by0)))), rows = Math.ceil(insideN / cols); s.insideKey = insideKey; s.inside = Array.from({ length: insideN }, (_, i) => { const row = Math.floor(i / cols), col = i % cols, targetX = bx0 + (col + .5) * (bx1 - bx0) / cols, targetY = by0 + (row + .5) * (by1 - by0) / rows; return { text: copyPool[i % copyPool.length], x: targetX + rnd(-4, 4), y: by0 - 12 - row * rnd(5, 9), targetX, targetY, vx: rnd(-.12, .12), vy: rnd(1.7, 3), z: rnd(.72, 1), ph: rnd(0, 7), angle: rnd(-.018, .018), va: 0, pulse: 0, delay: rnd(0, .12), entered: false, born: t, hw: 20 }; }); const spots = [[.22,.2],[.72,.22],[.48,.45],[.22,.68],[.74,.7]]; s.nodes = spots.map((v, i) => ({ x: bx0 + v[0] * (bx1 - bx0), y: by0 + v[1] * (by1 - by0), band: i % 4, ph: i * 1.27 })); }
       const amp = p.motion == null ? 1 : p.motion, fs = 13 + p.type * 8, mx = (bx0 + bx1) / 2, my = (by0 + by1) / 2, flow = amp * (.012 + f.bass * .075), beatWave = Math.sin(f.beatPhase * Math.PI * 2);
       tg.fillStyle = ink; tg.font = `700 ${fs}px Manrope, "PingFang SC", sans-serif`; tg.textBaseline = 'middle'; tg.textAlign = 'center';
-      const nodeBands = [f.kick, f.bass, f.energy, f.high];
+      const nodeBands = [Math.max(f.kick,s.lowHit), Math.max(f.bass,s.lowHit*.72), Math.max(f.mid,f.snare,s.midHit), Math.max(f.high,f.hat,s.highHit)];
       for (const q of s.inside) { if (t - q.born < q.delay) continue; q.hw = Math.min((bx1 - bx0) * .14, 46, Math.max(10, tg.measureText(q.text).width * q.z * .5)); q.hh = fs * q.z * .48; const rx = q.x - mx, ry = q.y - my, rl = Math.max(30, Math.hypot(rx, ry)), landing = q.entered && t - q.enterAt < .72; let localPulse = 0; if (q.entered) for (const n of s.nodes) { const dxn = q.x - n.x, dyn = q.y - n.y, dn = Math.max(8, Math.hypot(dxn, dyn)), level = clamp(nodeBands[n.band] * .78 + f.beat * .34 + Math.max(0, Math.sin(f.beatPhase * Math.PI * 2 + n.ph)) * f.energy * .18, 0, 1), radius = 62 + level * 78, influence = dn < radius ? (1 - dn / radius) * level : 0; if (influence > 0) { localPulse = Math.max(localPulse, influence); q.vx += dxn / dn * influence * amp * .34; q.vy += dyn / dn * influence * amp * .26 + influence * amp * .035; q.va += (dxn >= 0 ? 1 : -1) * influence * amp * .014; } }
-        q.pulse = Math.max(q.pulse * .82, localPulse); const sizeHit = 1 + amp * (f.energy * .12 + f.kick * .26 + f.beat * .1 + q.pulse * .58); q.hw *= sizeHit; q.hh *= sizeHit; q.renderScale = sizeHit; q.vx += (-ry / rl) * flow + amp * Math.sin(t * .9 + q.ph) * (.006 + f.high * .035) + amp * beatWave * .018; q.vy += (q.entered ? .05 : .2) + amp * ((rx / rl) * flow + Math.cos(t * .75 + q.ph) * (.004 + f.high * .025)); q.vx = clamp(q.vx * (q.entered ? .975 : .994), -4.2, 4.2); q.vy = clamp(q.vy * (q.entered ? .982 : .996), -1.4, 6.5); q.va *= .94; q.angle = clamp(q.angle + q.va, -.22, .22); q.x += q.vx; q.y += q.vy * (.92 + p.fall * .1); if (!q.entered && q.y >= by0 + q.hh) { q.entered = true; q.enterAt = t; } }
+        q.pulse = Math.max(q.pulse * .82, localPulse); const sizeHit = 1 + amp * (f.energy * .1 + f.kick * .18 + f.mid * .08 + s.lowHit * .22 + s.midHit * .13 + s.beatHit * .12 + q.pulse * .44); q.hw *= sizeHit; q.hh *= sizeHit; q.renderScale = sizeHit; q.vx += (-ry / rl) * flow + amp * Math.sin(t * .9 + q.ph) * (.006 + f.high * .035 + s.highHit * .025) + amp * beatWave * (.018 + s.beatHit * .03); q.vy += (q.entered ? .05 : .12) + amp * ((rx / rl) * flow + Math.cos(t * .75 + q.ph) * (.004 + f.mid * .02 + s.midHit * .025)); q.vx = clamp(q.vx * (q.entered ? .975 : .994), -5.2, 5.2); q.vy = clamp(q.vy * (q.entered ? .982 : .996), -1.6, 6.4); q.va *= .94; q.angle = clamp(q.angle + q.va, -.22, .22); q.x += q.vx; q.y += q.vy * (.48 + p.fall * .45); if (!q.entered && q.y >= by0 + q.hh) { q.entered = true; q.enterAt = t; } }
       for (let pass = 0; pass < 5; pass++) { for (let i = 0; i < s.inside.length; i++) for (let j = i + 1; j < s.inside.length; j++) { const a = s.inside[i], b = s.inside[j]; if (!a.entered || !b.entered) continue; const ox = a.hw + b.hw + 3 - Math.abs(a.x - b.x), oy = a.hh + b.hh + 3 - Math.abs(a.y - b.y); if (ox > 0 && oy > 0) { const kickOut = .14 + amp * (f.kick * .42 + f.beat * .18); if (ox < oy) { const dir = a.x < b.x ? -1 : 1; a.x += dir * ox * .54; b.x -= dir * ox * .54; const av = a.vx; a.vx = b.vx * .42 + dir * kickOut; b.vx = av * .42 - dir * kickOut; } else { const dir = a.y < b.y ? -1 : 1; a.y += dir * oy * .54; b.y -= dir * oy * .54; const av = a.vy; a.vy = b.vy * .38 + dir * kickOut; b.vy = av * .38 - dir * kickOut; } const spin = (a.vx - b.vx) * .009; a.va += spin; b.va -= spin; } } for (const q of s.inside) { if (!q.entered) continue; if (q.x - q.hw < bx0 || q.x + q.hw > bx1) { q.x = clamp(q.x, bx0 + q.hw, bx1 - q.hw); q.vx *= -.52; q.va += q.vy * .004; } if (q.y + q.hh > by1) { q.y = by1 - q.hh; q.vy = 0; q.va += q.vx * .004; } if (q.y - q.hh < by0) { q.y = by0 + q.hh; q.vy = Math.max(.35, q.vy); } } }
       for (const q of s.inside) { const breathe = q.z * (q.renderScale || 1); tg.save(); tg.translate(q.x, q.y); tg.rotate(q.angle); tg.scale(breathe, breathe); tg.fillText(q.text, 0, 0); tg.restore(); }
       tg.globalCompositeOperation = 'destination-in'; tg.drawImage(topSub, 0, 0); tg.globalCompositeOperation = 'source-over'; ctx.globalAlpha = .94; const shake = amp * f.kick * 1.25; ctx.drawImage(tm, rnd(-shake, shake), rnd(-shake, shake)); ctx.globalAlpha = 1; ctx.restore();
 
       // Lower half: picked paper colour, enlarged live cutout, open space for falling lyrics.
       ctx.fillStyle = bg; ctx.fillRect(0, cut, W, H - cut); ctx.save(); ctx.globalAlpha = .045; ctx.fillStyle = ink; for (let i = 0; i < 240; i++) { const x = (i * 83) % W, y = cut + ((i * 137) % (H - cut)); ctx.fillRect(x, y, 1, 1); } ctx.restore();
-      const drive = clamp(f[p.drv], 0, 1), subjectScale = 1 + p.move * (drive * .055 + f.kick * .025), subjectLift = p.move * (drive * 12 + f.beat * 5); ctx.save(); ctx.beginPath(); ctx.rect(0, cut, W, H - cut); ctx.clip(); ctx.globalAlpha = 1; ctx.translate(W / 2, cut + (H - cut) / 2 - subjectLift); ctx.scale(subjectScale, subjectScale); ctx.drawImage(bottomSub, -W / 2, -(cut + (H - cut) / 2)); ctx.restore();
+      const drive = clamp(f[p.drv], 0, 1), subjectScale = 1 + p.move * (drive * .07 + f.bass * .035 + s.lowHit * .075 + s.beatHit * .03), subjectStretch = 1 + p.move * (f.mid * .018 + s.midHit * .035), subjectLift = p.move * (drive * 16 + f.beat * 7 + s.lowHit * 13 + s.beatHit * 7); ctx.save(); ctx.beginPath(); ctx.rect(0, cut, W, H - cut); ctx.clip(); ctx.globalAlpha = 1; ctx.translate(W / 2, cut + (H - cut) / 2 - subjectLift); ctx.scale(subjectScale * subjectStretch, subjectScale / subjectStretch); ctx.drawImage(bottomSub, -W / 2, -(cut + (H - cut) / 2)); ctx.restore();
 
       s.drops = s.drops.filter(d => t - d.born < d.life && d.y < H + 150); for (const d of s.drops) { const age = t - d.born, dSize = (13 + p.type * 8) * (d.sizeScale || 1); d.y += d.vy / 60 * p.fall * (1 + f.kick * 2.2); d.x += Math.sin(t * 1.4 + d.born * 3) * .18; const fade = Math.min(1, age * 3) * Math.min(1, (d.life - age) * 1.5); ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.rot + Math.sin(t + d.born) * .018); ctx.globalAlpha = fade * .9; ctx.fillStyle = ink; ctx.strokeStyle = bg; ctx.lineWidth = Math.max(1.5, dSize * .09); ctx.font = `700 ${dSize}px Manrope, "PingFang SC", sans-serif`; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
         const ws = d.text.split(/\s+/).filter(Boolean), maxW = 170 + p.type * 18; let yy = 0, line = ''; for (const w of ws) { const test = line ? line + ' ' + w : w; if (ctx.measureText(test).width > maxW && line) { ctx.strokeText(line, 0, yy); ctx.fillText(line, 0, yy); line = w; yy += dSize * .94; } else line = test; } if (line) { ctx.strokeText(line, 0, yy); ctx.fillText(line, 0, yy); } ctx.restore(); }
-      s.sparks = s.sparks.filter(q => t - q.born < q.life && q.y < H + 20); for (const q of s.sparks) { const age = t - q.born, z = (2.2 + p.type * 2.7) * (q.zScale || 1); q.y += q.vy / 60 * p.fall * (1 + f.kick * 1.8); q.x += q.vx / 60 + Math.sin(t * 2 + q.ph) * .12; const a = Math.min(1, age * 5) * Math.min(1, (q.life - age) * 2); ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(t * .35 + q.ph); ctx.globalAlpha = a * (.55 + f.high * .4); ctx.fillStyle = p.bg === '深色取色' ? '#fff' : ink; ctx.beginPath(); for (let j = 0; j < 10; j++) { const r = j % 2 ? z * .42 : z, an = -Math.PI / 2 + j * Math.PI / 5; if (!j) ctx.moveTo(Math.cos(an) * r, Math.sin(an) * r); else ctx.lineTo(Math.cos(an) * r, Math.sin(an) * r); } ctx.closePath(); ctx.fill(); ctx.restore(); }
-      ctx.globalAlpha = 1; ctx.fillStyle = ink; ctx.globalAlpha = .18 + f.high * .35; ctx.fillRect(0, cut - 1, W, 1 + f.high * 2); ctx.globalAlpha = 1; dropFlash(f, p); } },
+      s.sparks = s.sparks.filter(q => t - q.born < q.life && q.y < H + 20); for (const q of s.sparks) { const age = t - q.born, z = (4 + p.type * 3.8) * (q.zScale || 1), stretch = 1 + f.high * .1 + s.highHit * .22; q.y += q.vy / 60 * p.fall * (1 + f.kick * .9); q.x += q.vx / 75 + Math.sin(t * (1.35 + f.high * 1.1) + q.ph) * (.06 + s.highHit * .1); const a = Math.min(1, age * 5) * Math.min(1, (q.life - age) * 2); ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(t * (.1 + f.high * .12) + q.ph); ctx.scale(stretch, 1 / Math.sqrt(stretch)); ctx.globalAlpha = a * (.62 + f.high * .3 + s.highHit * .2); ctx.fillStyle = p.bg === '深色取色' ? '#fff' : ink; ctx.beginPath(); for (let j = 0; j < 10; j++) { const r = j % 2 ? z * .42 : z, an = -Math.PI / 2 + j * Math.PI / 5; if (!j) ctx.moveTo(Math.cos(an) * r, Math.sin(an) * r); else ctx.lineTo(Math.cos(an) * r, Math.sin(an) * r); } ctx.closePath(); ctx.fill(); ctx.restore(); }
+      ctx.globalAlpha = 1; const dividerPulse = clamp(f.mid * .35 + f.high * .45 + s.midHit * .55 + s.highHit * .85, 0, 1.5); ctx.fillStyle = dividerPulse > .72 ? splitAccent() : ink; ctx.globalAlpha = .2 + dividerPulse * .48; ctx.fillRect(0, cut - 1 - dividerPulse, W, 1.5 + dividerPulse * 4.5); ctx.globalAlpha = 1; dropFlash(f, p); } },
 
   mosaic: {name:'马赛克',icon:'🟦',desc:'大块拼贴 · 重音错位',hint:'改为杂志感大块取景：平时与原图对齐，重音到来时少量宽幅切片横向错位，随后快速回弹，不再出现方格网页马赛克。',
     params:[R('pieces','拼贴块数',3,10,6,1),R('shift','错位距离',8,90,38,1),R('height','切片高度',.05,.2,.1),R('tint','取色浓度',0,.65,.2),D('drv','beat',['beat','kick','snare'])],state:{},
@@ -1259,7 +1399,7 @@ const FX = {
       ctx.globalAlpha=1;editorialHeadline(raw,p.headline,28,Math.min(H*.74,H-3*(p.headline+8)-24),e.pulse);
     } },
 
-  rain: {name:'字符雨',icon:'🌧️',desc:'扁平字阵 · 鼓点换列',hint:'无描边、无混合叠色的纯色字符雨。默认使用照片代表色，也可切换自动反差、深浅色、经典黑白或手动颜色。',
+  rain: {name:'字符雨滴',icon:'🌧️',desc:'扁平字阵 · 鼓点换列',hint:'无描边、无混合叠色的纯色字符雨。默认使用照片代表色，也可切换自动反差、深浅色、经典黑白或手动颜色。',
     params:[Sel('copy','文字来源',['自定义文字','自动歌词'],'自定义文字'),T('text','文案','SOFT / RAIN'),Sel('font','字体样式',['粗体无衬线','窄体海报','等宽字体','衬线编辑'],'粗体无衬线'),Sel('unit','排版样式',['单字雨','双字组','短词组'],'单字雨'),Sel('colorMode','颜色模式',['自动反差','图片深色','图片亮色','图片代表色','经典黑色','经典白色','手动颜色'],'图片代表色'),C('col','手动颜色','#F4F0E6'),R('pitch','文字间距',16,42,27,1),R('density','字符覆盖',.04,.42,.1),R('fall','落字距离',30,240,110,1),R('photo','底图清晰度',.55,1,.92),D('drv','beat',['beat','kick','snare'])],state:{},
     draw(f,p,t){const s=this.state,e=editorialBeat(s,f,p,t),g=editorialSamples(s,p.pitch,false,t),raw=editorialCopy(p,t),compact=Array.from(raw.replace(/[\s/]+/g,'')),words=raw.split(/[\s/]+/).filter(Boolean),pal=imagePalette(),fontSize=Math.max(14,p.pitch*(p.unit==='单字雨'?.78:p.unit==='双字组'?.62:.52));ctx.save();ctx.filter=`saturate(.9) brightness(${.72+p.photo*.28})`;ctx.drawImage(src,0,0);ctx.restore();
       const weight=p.font==='衬线编辑'?'600':p.font==='窄体海报'?'900':'800',family=p.font==='窄体海报'?'Impact, "Arial Narrow", "PingFang SC", sans-serif':p.font==='等宽字体'?'"SFMono-Regular", Menlo, Consolas, "PingFang SC", monospace':p.font==='衬线编辑'?'Georgia, "Songti SC", serif':'Manrope, "PingFang SC", sans-serif';ctx.font=`${weight} ${fontSize}px ${family}`;ctx.textAlign='center';ctx.textBaseline='middle';
@@ -1268,15 +1408,21 @@ const FX = {
     } },
 
 };
-const FX_ORDER = ['hud', 'subjectSplit', 'contourField', 'textWrap', 'punchSymbols', 'rhythmPuzzle', 'bars', 'rain', 'signalPoster', 'glitch', 'scan', 'dots', 'warhol', 'ascii', 'pixelReveal', 'stretchBands'];
+FX.punchStudio = createPunchStudioEffect();
+FX.singlePunch = createSinglePunchEffect({W, H, src, ctx, S, R, Sel, songTime});
+FX.colorBars = createColorBarsEffect();
+const FX_ORDER = ['hud', 'subjectSplit', 'contourField', 'textWrap', 'bars', 'punchSymbols', 'objectPulse', 'colorBars', 'rhythmPuzzle', 'rain', 'signalPoster', 'punchStudio', 'glitch'];
 
 const FX_CAPS = {
+  singlePunch: ['只用正方形', '照片取色 / 独立撞色', '低 / 中 / 高频独立触发', '闪现 / 短停 / 消失'],
+  colorBars: ['1–3 张用户照片', '明亮综合色板', '节拍伸缩色条', '弹跳短文字'],
+  punchStudio: ['画面与歌曲选形', '照片主色取色', '背景质感', '实测拍点分批打孔', '自然下落'],
   signalPoster: ['单图三构图', '自定义文字 / 当前歌词', '扫描线', '重音横带撕裂', '节拍换景'],
   none: ['9:16 素材适配'], glitch: ['方块采样错位', 'RGB 通道分离', 'Kick / Hi-hat 瞬态检测'], scan: ['照片降采样', '节拍推进', '局部拉伸扫描'],
   dots: ['原色灯珠', '亮度尺寸映射', '节拍光浪'], mosaic: ['大块取景', '重音错位回弹', '照片自适应取色'], warhol: ['四种分镜布局', '等比例特写', '四拍换景'],
   ascii: ['原色字符成像', '歌词标题排印'], rain: ['无描边纯色字粒', '四种字体风格', '七种取色模式', '按列落位', '鼓点重组'], bars: ['实时 FFT', '连续曲线插值', '前后景声波海报'],
   hud: ['短标记自动分组', '曲线点阵网格', '流动高亮点', '双层湍流场', 'CH/QUERY 数据标注', '音乐位移波'], pixelReveal: ['细密原色采样', '局部砂粒位移', '鼓点扬起与回落'],
-  contourField: ['MODNet 主体蒙版', '蒙版膨胀/差集', '文字轮廓合并', '低频/节拍扩散'], textWrap: ['MODNet 主体外轮廓', '曲线字形排版', '弧长防重叠', '歌词时间轴', '鼓点重点词推进'], punchSymbols: ['单字符蒙版', '上下正负形', '同位置照片采样', '节拍轻弹'], rhythmPuzzle: ['九宫格裁切', '整行整列滑轨', '重音触发', '自动拼回完整图', '图片取色文案'], stretchBands: ['局部色彩采样', '横向像素延展', '主体分割保护', '节拍状态机'],
+  contourField: ['MODNet 主体蒙版', '蒙版膨胀/差集', '文字轮廓合并', '低频/节拍扩散'], textWrap: ['MODNet 主体外轮廓', '曲线字形排版', '弧长防重叠', '歌词时间轴', '鼓点重点词推进'], punchSymbols: ['单字符蒙版', '上下正负形', '同位置照片采样', '节拍轻弹'], objectPulse: ['SlimSAM 通用分割', '任意图片多物体', '按图缓存蒙版', '强曝光与纯色合成'], rhythmPuzzle: ['九宫格裁切', '整行整列滑轨', '重音触发', '自动拼回完整图', '图片取色文案'], stretchBands: ['局部色彩采样', '横向像素延展', '主体分割保护', '节拍状态机'],
   subjectSplit: ['实时主体分割', '前景/背景分层', '图片取色', '轮廓文字填充', '高低频/节拍驱动']
 };
 
@@ -1347,11 +1493,12 @@ $('#tl').addEventListener('click', e => { if (!S.buffer) return; const r = e.cur
 /* =====================================================================
    7. UI
    ===================================================================== */
-function selectFx(id) { S.fx = id; document.querySelectorAll('#fxlist button, #originalCompare button').forEach(b => b.classList.toggle('on', b.dataset.id === id)); $('#fxname').textContent = FX[id].name + ' · ' + FX[id].desc; const caps = FX_CAPS[id] || []; $('#fxhint').textContent = (FX[id].hint || '') + (caps.length ? '\n技术能力：' + caps.join(' · ') : ''); buildParams();
+function selectFx(id) { const changed = S.fx !== id; S.fx = id; if (changed) FX[id].enter?.(); if (id === 'punchStudio') { FX[id].state.origin = songTime(); FX[id].state.key = null; } document.querySelectorAll('#fxlist button, #originalCompare button').forEach(b => b.classList.toggle('on', b.dataset.id === id)); $('#fxname').textContent = FX[id].name + ' · ' + FX[id].desc; const caps = FX_CAPS[id] || []; $('#fxhint').textContent = (FX[id].hint || '') + (caps.length ? '\n技术能力：' + caps.join(' · ') : ''); buildParams();
   if (id === 'subjectSplit') { setSeg(S.isVideo ? '实时视频抠像 · 启动中…' : 'MODNet 高清抠像 · 启动中…', 'working'); setTimeout(() => S.isVideo ? refineSubject() : refineSubjectHQ('split'), 20); }
-  else if (!S.isVideo && !S.cache.subjHQ && ['punchSymbols', 'bars', 'stretchBands', 'contourField', 'textWrap'].includes(id)) { setSeg('MODNet 高清抠像 · 启动中…', 'working'); setTimeout(() => refineSubjectHQ('full'), 20); }
+  else if (id === 'objectPulse') { setSeg(S.isVideo ? '主体闪拍 · 当前仅支持静态图片' : '主体闪拍 · 快速预览…', S.isVideo ? 'fallback' : 'working'); if(!S.isVideo)setTimeout(()=>prepareObjectPulseRegions(FX.objectPulse.state),20); }
+  else if (!S.isVideo && !S.cache.subjHQ && ['punchSymbols', 'singlePunch', 'bars', 'stretchBands', 'contourField', 'textWrap'].includes(id)) { setSeg('MODNet 高清抠像 · 启动中…', 'working'); setTimeout(() => refineSubjectHQ('full'), 20); }
 }
-function buildFxList() { const list = $('#fxlist'); list.innerHTML = '';
+function buildFxList() { $('#fxtabs').replaceChildren(); const list = $('#fxlist'); list.innerHTML = '';
   for (const id of ['none', ...FX_ORDER]) { const e = FX[id]; if (!e) continue; const b = document.createElement('button'); b.dataset.id = id;
     b.innerHTML = `<span class="ico">${e.icon}</span>${e.name}`; b.title = e.desc; b.classList.toggle('on', id === S.fx);
     b.onclick = () => selectFx(id); if (id === 'none') { $('#originalCompare').replaceChildren(b); } else list.appendChild(b); }
@@ -1379,16 +1526,22 @@ function buildEffectCopy() {
 }
 function buildParams() {
   buildEffectCopy();
+  FX.colorBars.updatePicker();
   const box = $('#params'); box.innerHTML = ''; const defs = FX[S.fx].params, vals = S.params[S.fx];
   if (!defs.length) { box.innerHTML = '<div class="hint">该效果没有可调参数。</div>'; return; }
   for (const d of defs) { if (defs.some(p => p.key === 'copy') && ['copy', 'text'].includes(d.key)) continue;
     const row = document.createElement('div'); row.className = `p p-${d.type} p-${d.key}`; const lab = document.createElement('label'); lab.textContent = d.label; row.appendChild(lab);
-    if (d.type === 'range') { const inp = document.createElement('input'); inp.type = 'range'; inp.min = d.min; inp.max = d.max; inp.step = d.step; inp.value = vals[d.key]; const v = document.createElement('div'); v.className = 'v'; v.textContent = fmt(vals[d.key], d.step); inp.oninput = () => { vals[d.key] = +inp.value; v.textContent = fmt(+inp.value, d.step); if (d.key === 'pitch') delete S.cache['lum' + vals.pitch]; }; row.appendChild(inp); row.appendChild(v); }
+    if (d.type === 'colorCount') FX.colorBars.countControl(row, vals);
+    else if (d.type === 'colorRules') FX.colorBars.rulesControl(row);
+    else if (d.type === 'colorPhoto') FX.colorBars.photoControl(row, d, vals);
+    else if (d.type === 'colorUpload') { const upload = document.createElement('input'); upload.type = 'file'; upload.accept = 'image/*'; upload.multiple = true; upload.hidden = true; const button = document.createElement('button'); button.className = 'chip'; button.textContent = '上传 1–3 张图片'; button.onclick = () => upload.click(); upload.onchange = async () => { await FX.colorBars.upload(upload.files, vals); upload.value = ''; }; row.append(button, upload); }
+    else if (d.type === 'range') { const inp = document.createElement('input'); inp.type = 'range'; inp.min = d.min; inp.max = d.max; inp.step = d.step; inp.value = vals[d.key]; const v = document.createElement('div'); v.className = 'v'; v.textContent = fmt(vals[d.key], d.step); inp.oninput = () => { vals[d.key] = +inp.value; v.textContent = fmt(+inp.value, d.step); if (d.key === 'pitch') delete S.cache['lum' + vals.pitch]; }; row.appendChild(inp); row.appendChild(v); }
     else if (d.type === 'text') { const inp = document.createElement('input'); inp.type = 'text'; inp.value = vals[d.key]; inp.placeholder = '用 / 或逗号分隔'; inp.style.gridColumn = '2/4'; inp.className = 'txt'; inp.oninput = () => vals[d.key] = inp.value; row.appendChild(inp); }
     else if (d.type === 'color') { const inp = document.createElement('input'); inp.type = 'color'; inp.value = vals[d.key]; inp.oninput = () => vals[d.key] = inp.value; row.appendChild(inp); row.appendChild(document.createElement('div')); }
     else if (d.type === 'select') { const sel = document.createElement('select'); d.opts.forEach(o => { const op = document.createElement('option'); op.textContent = o; op.value = o; op.selected = vals[d.key] === o; sel.appendChild(op); }); sel.onchange = () => { vals[d.key] = sel.value; if (d.key === 'copy') invalidateTextEffect(S.fx); }; row.appendChild(sel); row.appendChild(document.createElement('div')); }
     else if (d.type === 'driver') { const wrap = document.createElement('div'); wrap.className = 'drv'; (d.only || Object.keys(DRIVERS)).forEach(k => { const c = document.createElement('button'); c.className = 'chip' + (vals[d.key] === k ? ' on' : ''); c.textContent = DRIVERS[k]; c.onclick = () => { vals[d.key] = k; wrap.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === c)); }; wrap.appendChild(c); }); row.appendChild(wrap); }
     box.appendChild(row); }
+  FX[S.fx].buildPanel?.(box);
   const reset = document.createElement('button'); reset.className = 'chip param-reset'; reset.textContent = '恢复默认参数'; reset.onclick = () => { defs.forEach(d => vals[d.key] = d.def); buildParams(); }; box.appendChild(reset);
 }
 const fmt = (v, step) => step >= 1 ? String(Math.round(v)) : v.toFixed(2);
@@ -1452,7 +1605,7 @@ async function loadTrack(tr) { S.trackId = tr.id;
 }
 async function setBuffer(buf, name, tr = {}) {
   S.buffer = buf; S.analysis = null; lastBeatIdx = -1; S.lastSection = null;
-  const A = await analyze(buf); S.analysis = A;
+  const key = S.trackId, A = await analyze(buf); if (S.buffer !== buf || S.trackId !== key) return; S.analysis = A; S.bufferTrackId = key;
   const displayGenre = tr.genre || A.genre, displayBpm = tr.bpm || A.bpm;
   $('#aBpm').textContent = displayBpm; $('#aGenre').textContent = displayGenre; drawTimeline(0);
   $('#nowD').textContent = `${displayGenre} · ${displayBpm} bpm · ${fmtT(A.dur)}`;
@@ -1479,6 +1632,14 @@ $('#effectFold').onclick = () => setPanelFocus($('#effectCard').classList.contai
 $('#materialFold').onclick = () => setPanelFocus($('#materialCard').classList.contains('expanded') ? 'effects' : 'material');
 
 let exporting = false;
+function resetActiveEffectForExport(){
+  const fx=FX[S.fx],s=fx?.state;if(!s)return;fx.enter?.();
+  Object.assign(s,{clock:0,step:0,born:0,last:0,lastHit:-9,lastDrop:0,hit:0,hitWas:0,prevHit:0,prevBeat:0,prevTextHit:0,cursor:-1,word:0,active:[],drops:[],sparks:[],moves:[],pendingSlides:[],solveQueue:[],lastAudio:null,beatCount:0});
+  if(S.fx==='subjectSplit'){s.insideKey='';s.inside=[];s.nodes=[];s.topSub=null;s.bottomSub=null;s.plate=null;s.tm=null;}
+  if(S.fx==='rhythmPuzzle')s.sourceKey=null;
+  if(S.fx==='colorBars'){s.scene=null;s.textBounds=[];}
+  if(S.fx==='punchStudio'){s.origin=0;s.key=null;}
+}
 function drawPhoneExport(out) {
   const d = out.getContext('2d');
   const sx = out.width / 390, sy = out.height / 844;
@@ -1514,16 +1675,18 @@ async function exportPreviewVideo(seconds = 15) {
   if (!S.buffer) { openSheet('tracks'); toast('先选择一首音乐'); return; }
   if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) { toast('当前浏览器不支持视频导出'); return; }
   setupGraph(); await ac().resume();
-  const startAt = songTime(); play(startAt);
-  const out = document.createElement('canvas'); out.width = 780; out.height = 1688;
-  const stream = out.captureStream(30);
+  const restoreAt=songTime(),restorePlaying=S.playing;stopSource();S.playing=false;S.pausedAt=0;resetActiveEffectForExport();
+  // Publish the actual 9:16 artwork, not a second real-time redraw of the phone
+  // mockup. Capturing the source canvas directly removes one expensive render
+  // pass and lets MediaRecorder receive a steadier 60fps stream.
+  const stream = cv.captureStream(60);
   const audioTrack = recordDest?.stream.getAudioTracks()[0]; if (audioTrack) stream.addTrack(audioTrack);
   const choices = ['video/mp4;codecs=h264,aac', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
   const mimeType = choices.find(x => MediaRecorder.isTypeSupported(x)) || '';
   let recorder;
-  try { recorder = new MediaRecorder(stream, mimeType ? { mimeType, videoBitsPerSecond: 6000000 } : { videoBitsPerSecond: 6000000 }); }
+  try { recorder = new MediaRecorder(stream, mimeType ? { mimeType, videoBitsPerSecond: 10000000 } : { videoBitsPerSecond: 10000000 }); }
   catch (err) { toast('无法启动视频编码'); return; }
-  const chunks = [], button = $('#bigbtn'), status = $('#status'), started = performance.now();
+  const chunks = [], button = $('#bigbtn'), status = $('#status');let started=0;
   exporting = true; button.classList.add('recording'); button.title = '正在导出视频';
   recorder.ondataavailable = e => { if (e.data?.size) chunks.push(e.data); };
   recorder.onerror = () => { exporting = false; button.classList.remove('recording'); status.textContent = '导出失败'; toast('视频导出失败'); };
@@ -1537,11 +1700,13 @@ async function exportPreviewVideo(seconds = 15) {
     const url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = `${safe}.${ext}`; a.click();
     setTimeout(() => URL.revokeObjectURL(url), 30000);
     status.textContent = '导出完成'; toast(`已导出 15 秒 ${ext.toUpperCase()} 视频`);
+    stopSource();S.playing=false;S.pausedAt=restoreAt;resetActiveEffectForExport();if(restorePlaying)play(restoreAt);else setPlayIcon(false);
   };
   recorder.start(500);
+  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+  play(0);started=performance.now();
   (function paint() {
     if (!exporting) return;
-    drawPhoneExport(out);
     const left = Math.max(0, seconds - (performance.now() - started) / 1000);
     status.textContent = `正在导出 · ${left.toFixed(1)}s`;
     requestAnimationFrame(paint);
@@ -1558,9 +1723,14 @@ $('#vol').oninput = e => { if (gainNode) gainNode.gain.value = +e.target.value; 
 document.addEventListener('keydown', e => { if (e.code === 'Space' && e.target.tagName !== 'INPUT') { e.preventDefault(); S.playing ? pause() : play(S.pausedAt || 0); } });
 
 /* ---------- photos ---------- */
-const TAGS = ['全部', '横图', '竖图', '本地', '自拍', '半身', '全身', '双人', '多人', '户外', '室内', '夜景'];
+const TAGS = ['全部', '熟人', '横图', '竖图', '本地', '自拍', '半身', '全身', '双人', '多人', '户外', '室内', '夜景'];
 let curTag = '全部', galleryLimit = 24;
-function presetMatches(d) { return curTag === '全部' || d.tags.includes(curTag); }
+function presetMatches(d) {
+  const familiar = d.tags.includes('熟人');
+  if (curTag === '熟人') return familiar;
+  if (familiar) return false;
+  return curTag === '全部' || d.tags.includes(curTag);
+}
 function presetButton(d, i) { const b = document.createElement('button'); b.dataset.i = i; b.dataset.tags = d.tags.join(','); const img = new Image(); img.loading = 'lazy'; img.decoding = 'async'; img.src = d.thumb || d.src; img.alt = d.name; b.appendChild(img);
   if (d.isVideo) { const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = '视频'; b.appendChild(tag); }
   const n = document.createElement('div'); n.className = 'n'; n.innerHTML = d.name + '<small>' + d.tags.join(' · ') + '</small>'; b.appendChild(n); b.onclick = () => selectPhoto(i); return b; }
@@ -1577,9 +1747,9 @@ function buildPhotos() { const box = $('#photos'), fl = $('#filters');
   const up = document.createElement('button'); up.className = 'up'; up.textContent = '上传\n照片/视频'; up.style.whiteSpace = 'pre-line'; up.onclick = () => $('#photoFile').click(); box.appendChild(up);
   renderGallery();
   applyFilter(); }
-function applyFilter() { let n = PRESETS.filter(presetMatches).length; document.querySelectorAll('#photos button[data-lib]').forEach(b => { const show = curTag === '全部' || b.dataset.tags.split(',').includes(curTag); b.classList.toggle('hide', !show); if (show) n++; }); const label = (PRESETS[S.photoIdx]?.name || '本地素材') + ' · ' + n + '/' + (PRESETS.length + LIB.photos.length) + ' 个', el = $('#photoCount'); el.textContent = label; el.title = label; }
-function selectPhoto(i) { const d = PRESETS[i]; document.querySelectorAll('#photos button').forEach(b => b.classList.toggle('on', +b.dataset.i === i)); if (d.isVideo) setVideo(d.src); else { const img = new Image(); img.onload = () => setImage(img); img.src = d.src; } S.photoIdx = i; applyFilter(); }
-$('#photoFile').onchange = async e => { const files = [...e.target.files]; if (!files.length) return; await importFiles(files, 'photo'); const rec = LIB.photos[LIB.photos.length - 1]; if (rec) selectLib(rec); };
+function applyFilter() { let n = PRESETS.filter(presetMatches).length; document.querySelectorAll('#photos button[data-lib]').forEach(b => { const show = curTag !== '熟人' && (curTag === '全部' || b.dataset.tags.split(',').includes(curTag)); b.classList.toggle('hide', !show); if (show) n++; }); const publicTotal = PRESETS.filter(d => !d.tags.includes('熟人')).length + LIB.photos.length, total = curTag === '熟人' ? PRESETS.filter(d => d.tags.includes('熟人')).length : publicTotal, label = (PRESETS[S.photoIdx]?.name || '本地素材') + ' · ' + n + '/' + total + ' 个', el = $('#photoCount'); el.textContent = label; el.title = label; if (S.fx === 'colorBars') FX.colorBars.updatePicker(); }
+function selectPhoto(i) { const d = PRESETS[i]; if(S.fx==='colorBars'){if(d.isVideo)return toast('交错色条请选择静态图片');FX.colorBars.choosePhoto('preset:'+i,S.params.colorBars);return;} document.querySelectorAll('#photos button').forEach(b => b.classList.toggle('on', +b.dataset.i === i)); if (d.isVideo) setVideo(d.src); else { const img = new Image(); img.onload = () => setImage(img); img.src = d.src; } S.photoIdx = i; applyFilter(); }
+$('#photoFile').onchange = async e => { const files = [...e.target.files]; if (!files.length) return; if(S.fx==='colorBars'){await FX.colorBars.upload(files,S.params.colorBars);e.target.value='';return;} await importFiles(files, 'photo'); const rec = LIB.photos[LIB.photos.length - 1]; if (rec) selectLib(rec); };
 
 /* =====================================================================
    8. LOCAL LIBRARY — folder import, persisted in IndexedDB (this browser only)
@@ -1611,7 +1781,7 @@ function addLibItem(rec) {
   if (rec.kind === 'photo') { LIB.photos.push(rec); const box = $('#photos'), b = document.createElement('button'); b.dataset.lib = rec.id; b.dataset.tags = ['本地', rec.orientation || '竖图'].join(','); b.innerHTML = `<img src="${rec.thumb}" alt=""><span class="tag">${rec.isVideo ? '视频' : (rec.orientation || '本地')}</span><div class="n">${rec.name}</div>`; b.onclick = () => selectLib(rec); b.oncontextmenu = e => { e.preventDefault(); if (confirm('从本机素材库移除「' + rec.name + '」？')) { idbDel(rec.id); LIB.photos = LIB.photos.filter(x => x !== rec); b.remove(); applyFilter(); } }; box.insertBefore(b, box.children[1]); applyFilter(); }
   else { LIB.music.push(rec); renderLocalTracks(); }
 }
-function selectLib(rec) { document.querySelectorAll('#photos button').forEach(b => b.classList.toggle('on', b.dataset.lib === rec.id)); const url = URL.createObjectURL(rec.blob); if (rec.isVideo) setVideo(url); else { const img = new Image(); img.onload = () => setImage(img); img.src = url; } S.photoIdx = -1; const label = rec.name + ' · 本地', el = $('#photoCount'); el.textContent = label; el.title = label; }
+function selectLib(rec) { if(S.fx==='colorBars'){if(rec.isVideo)return toast('交错色条请选择静态图片');FX.colorBars.choosePhoto(rec.id,S.params.colorBars);return;} document.querySelectorAll('#photos button').forEach(b => b.classList.toggle('on', b.dataset.lib === rec.id)); const url = URL.createObjectURL(rec.blob); if (rec.isVideo) setVideo(url); else { const img = new Image(); img.onload = () => setImage(img); img.src = url; } S.photoIdx = -1; const label = rec.name + ' · 本地', el = $('#photoCount'); el.textContent = label; el.title = label; }
 function renderLocalTracks() { const box = $('#tracks'); box.querySelectorAll('.local, .lgrp').forEach(x => x.remove()); if (!LIB.music.length) return;
   const g = document.createElement('div'); g.className = 'grp lgrp'; g.textContent = '本机音乐 · ' + LIB.music.length + ' 首（右键移除）'; box.insertBefore(g, box.firstChild);
   let ref = g.nextSibling;
@@ -1631,7 +1801,7 @@ $('#musicDir').onchange = e => importFiles(e.target.files, 'music');
 addEventListener('drop', async e => { const files = [...(e.dataTransfer?.files || [])]; if (!files.length) return;
   const audio = files.filter(f => f.type.startsWith('audio') || /\.(mp3|m4a|wav|aac|flac|ogg)$/i.test(f.name));
   const vis = files.filter(f => f.type.startsWith('image') || f.type.startsWith('video'));
-  if (vis.length) { await importFiles(vis, 'photo'); const r = LIB.photos[LIB.photos.length - 1]; if (r) selectLib(r); }
+  if(vis.length&&S.fx==='colorBars')await FX.colorBars.upload(vis,S.params.colorBars);else if (vis.length) { await importFiles(vis, 'photo'); const r = LIB.photos[LIB.photos.length - 1]; if (r) selectLib(r); }
   if (audio.length) { await importFiles(audio, 'music'); const r = LIB.music[LIB.music.length - audio.length]; if (r) loadTrack(r); } });
 
 
@@ -1671,9 +1841,10 @@ function fitPhone() {
 }
 addEventListener('resize', fitPhone); fitPhone();
 /* ---------- boot ---------- */
-buildFxList(); buildTracks(); buildPhotos(); selectPhoto(0); selectFx('subjectSplit'); drawTimeline(0); frame(); addEventListener('load', async () => { try { await restoreLibrary(); } catch (e) { }
+const entryQuery = new URLSearchParams(location.search), entryPhoto = PRESETS.findIndex(photo => photo.name === entryQuery.get('photo'));
+buildFxList(); buildTracks(); buildPhotos(); selectPhoto(entryPhoto >= 0 ? entryPhoto : 0); selectFx(FX[entryQuery.get('effect')] ? entryQuery.get('effect') : 'subjectSplit'); drawTimeline(0); frame(); addEventListener('load', async () => { try { await restoreLibrary(); } catch (e) { }
   const mf = new URLSearchParams(location.search).get('manifest') || window.MFX_MANIFEST; if (mf) await loadManifest(mf);
-  const testPool = [...PACK_TRACKS, ...REMOTE_TRACKS, ...LIB.music], pool = testPool.length ? testPool : TRACKS;
+  const testPool = [...PACK_TRACKS, ...REMOTE_TRACKS, ...LIB.music], lyricPool = testPool.filter(track => parseLRC(track.lrc || '').length > 0), pool = lyricPool.length ? lyricPool : (testPool.length ? testPool : TRACKS);
   const initialTrack = pool[Math.floor(Math.random() * pool.length)]; if (initialTrack) setTimeout(() => loadTrack(initialTrack), 180);
 });
 // Chrome may suspend audible autoplay until the first user gesture. The source
